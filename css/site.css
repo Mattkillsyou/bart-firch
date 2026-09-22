@@ -119,7 +119,9 @@ html.gl-planes .gl-fig.gl-off img{opacity:1}
 .arrive-copy{position:absolute;left:var(--gutter);right:var(--gutter);bottom:clamp(32px,7vh,80px);display:grid;gap:18px;opacity:0;transform:translateY(20px)}
 .arrive-cap{color:var(--ink)}
 .arrive-lead{font-weight:300;font-size:clamp(28px,4.4vw,64px);line-height:1.02;letter-spacing:-.03em;max-width:15em;text-wrap:balance}
-@media (max-width:720px){.arrive-fig{width:calc(72vw + 28vw * var(--p));height:calc(56dvh + 44dvh * var(--p))}}
+@media (max-width:720px){.arrive-fig{width:calc(72vw + 28vw * var(--p));height:calc(56dvh + 44dvh * var(--p))}
+.arrive-shade{height:56%;background:linear-gradient(to top,rgba(11,11,12,.86) 25%,rgba(11,11,12,0))}
+.arrive-lead{font-size:clamp(26px,7.4vw,40px)}}
 
 /* about */
 .about{padding-block:clamp(96px,16vh,220px)}
