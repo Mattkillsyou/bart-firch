@@ -12,7 +12,8 @@
 <meta property="og:image" content="img/bart-10.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300;1,9..144,400&family=Hanken+Grotesk:wght@300;400;500&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300;1,9..144,400&family=Hanken+Grotesk:wght@300;400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300;1,9..144,400&family=Hanken+Grotesk:wght@300;400;500&display=swap"></noscript>
 <link rel="stylesheet" href="css/site.css">
 <script type="importmap">
 { "imports": {
@@ -25,6 +26,8 @@
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
 </head>
 <body>
+
+<a class="skip" href="#hero">Skip to content</a>
 
 <div class="loader" id="loader" aria-hidden="true">
   <div class="loader-name"><span>Bart</span><span>Firch</span></div>
@@ -83,7 +86,7 @@
   <section class="about" id="about">
     <div class="wrap about-grid">
       <div class="about-text">
-        <p class="eyebrow reveal-line">About</p>
+        <h2 class="eyebrow reveal-line">About</h2>
         <p class="about-p reveal-line">Personal training. Yoga. Kinesiology and anatomy. Physical education, corporate fitness, injury prevention, running, athletics. I've done the work in all of them, for a long time.</p>
         <p class="about-p reveal-line">What ties it together is simple. I look at the whole person, figure out what they actually need, and help them do it.</p>
         <p class="about-pull" data-split>No program off a shelf. <em>No jargon.</em> Just clear work, done well.</p>
@@ -102,7 +105,7 @@
       </div>
       <div class="work-grid">
         <article class="offer">
-          <figure class="gl-fig offer-fig" data-gl data-focus="0.5 0.45" data-cursor="Read">
+          <figure class="gl-fig offer-fig" data-gl data-focus="0.5 0.45">
             <img style="object-position:50% 45%" src="img/bart-9.jpg" alt="Bart climbing stadium bleachers" width="2000" height="1334" loading="lazy" decoding="async">
           </figure>
           <div class="offer-body">
@@ -113,7 +116,7 @@
           </div>
         </article>
         <article class="offer offer-b">
-          <figure class="gl-fig offer-fig" data-gl data-focus="0.5 0.55" data-cursor="Read">
+          <figure class="gl-fig offer-fig" data-gl data-focus="0.5 0.55">
             <img style="object-position:50% 55%" src="img/bart-21.jpg" alt="Bart in a low lunge on a yoga mat beside a fountain" width="2000" height="1334" loading="lazy" decoding="async">
           </figure>
           <div class="offer-body">
@@ -143,11 +146,14 @@
   </section>
 
   <section class="exp" id="experience" aria-label="Experience">
+    <div class="marquee-wrap">
+      <button class="marquee-toggle" type="button" aria-pressed="false">Pause</button>
     <div class="marquee" aria-hidden="true">
       <div class="marquee-track">
         <span>Personal training</span><span>Yoga</span><span>Kinesiology</span><span>Anatomy</span><span>Physical education</span><span>Corporate fitness</span><span>Injury prevention</span><span>Running</span><span>Athletics</span>
         <span>Personal training</span><span>Yoga</span><span>Kinesiology</span><span>Anatomy</span><span>Physical education</span><span>Corporate fitness</span><span>Injury prevention</span><span>Running</span><span>Athletics</span>
       </div>
+    </div>
     </div>
     <div class="wrap exp-grid">
       <p class="exp-line" data-split>Nearly twenty years across personal training, yoga, kinesiology, anatomy, physical education, corporate fitness, injury prevention, running, and athletics.</p>
@@ -175,7 +181,7 @@
         <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
         <div class="field"><label for="f-msg">What's going on?</label><textarea id="f-msg" name="message" rows="3" required></textarea></div>
         <button class="btn" type="submit" data-magnetic data-cursor="">Schedule a consultation</button>
-        <p class="form-note" id="form-note" aria-live="polite"></p>
+        <p class="form-note" id="form-note" role="status"></p>
       </form>
     </div>
     <figure class="gl-fig contact-fig" data-gl data-focus="0.7 0.5">
@@ -193,5 +199,6 @@
 </main>
 
 <script type="module" src="js/site.js"></script>
+<script>setTimeout(function(){ if(!window.__booted) document.documentElement.classList.add('js-failed'); }, 9000);</script>
 </body>
 </html>
