@@ -472,6 +472,25 @@ function setupScroll(arriveFig) {
     });
   }
 
+  /* depth: the figures drift against the page, which the GL planes pick up from the rect */
+  if (!reduced) {
+    document.querySelectorAll('.about-fig, .offer-fig, .exp-fig').forEach((fig, i) => {
+      gsap.fromTo(fig, { y: 26 + i * 4 }, { y: -26 - i * 4, ease: 'none',
+        scrollTrigger: { trigger: fig, start: 'top bottom', end: 'bottom top', scrub: 0.6 } });
+    });
+  }
+
+  /* nav retracts going down, returns going up */
+  const nav = document.getElementById('nav');
+  ScrollTrigger.create({
+    start: 'top -80', end: 99999,
+    onUpdate: (st) => {
+      const down = st.direction === 1;
+      gsap.to(nav, { yPercent: down ? -140 : 0, duration: 0.5, ease: 'power3.out', overwrite: true });
+    },
+    onLeaveBack: () => gsap.to(nav, { yPercent: 0, duration: 0.4, ease: 'power3.out', overwrite: true }),
+  });
+
   /* text */
   document.querySelectorAll('[data-split]').forEach((el) => {
     if (el.closest('.hero, .arrive')) return;
