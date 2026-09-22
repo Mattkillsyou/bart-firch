@@ -1,4 +1,5 @@
 <title>Bart Firch Site Directions</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%231B5E5A%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%276%27 fill=%27%23ECEAE4%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..700&family=Instrument+Sans:wght@400;500;600&display=swap">
@@ -44,6 +45,12 @@ p{margin:0}
 .howto b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:999px;background:var(--ink);color:var(--bg);font-size:12px;font-weight:600}
 
 /* tiles */
+.built{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-block:8px 28px;padding:20px 24px;border:1px solid var(--accent);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none}
+.built:hover{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.built:hover .mono,.built:hover .built-note{color:inherit}
+.built strong{font-size:20px;font-weight:600;letter-spacing:-.01em}
+.built-note{font-size:14px;color:var(--muted);flex:1 1 320px}
+.built svg{width:22px;height:22px;flex:none}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:24px;padding-block:8px 48px}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;transition:transform .2s ease,box-shadow .2s ease}
 .tile:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
@@ -125,14 +132,21 @@ footer.site{padding-block:32px 48px;color:var(--muted);font-size:14px;display:gr
 <main class="wrap">
   <header class="hero">
     <span class="mono">Prepared for Bart Firch / September 2026</span>
-    <h1>Nine directions for your site</h1>
-    <p class="lede">Same six sections, same words, same photographs in every one. What you are choosing is the feel: how the site carries itself, and how someone meets you before they meet you.</p>
+    <h1>Nine directions, and the one I built</h1>
+    <p class="lede">The live site is linked at the top. Below it are nine flat directions, all with the same six sections, the same words and the same photographs. What you are choosing is the feel: how the site carries itself, and how someone meets you before they meet you.</p>
     <div class="howto">
       <span><b>1</b>Open a direction and scroll the whole page</span>
       <span><b>2</b>Pick the ones you like</span>
       <span><b>3</b>Leave comments, then copy your picks and send them</span>
     </div>
   </header>
+
+  <a class="built" href="../" target="_blank" rel="noopener">
+    <span class="mono">The one I built</span>
+    <strong>Open the live site</strong>
+    <span class="built-note">Dark, cinematic, built in WebGL. Best on a laptop, and it works on a phone.</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>
+  </a>
 
   <section class="grid" id="all" aria-label="The nine directions"></section>
 
