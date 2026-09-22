@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bart Firch</title>
+<meta name="description" content="Full-spectrum health coaching and private yoga with Bart Firch. Nearly twenty years of helping people build a body that can keep showing up for their life.">
+<meta name="theme-color" content="#0B0B0C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2716%27 fill=%27%230B0B0C%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%275%27 fill=%27%23E0A25A%27/%3E%3C/svg%3E">
+<meta property="og:title" content="Bart Firch">
+<meta property="og:description" content="A body that can keep showing up for your life. Health coaching and private yoga.">
+<meta property="og:image" content="img/bart-10.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,300;1,9..144,400&family=Hanken+Grotesk:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="css/site.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
+} }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+</head>
+<body>
+
+<div class="loader" id="loader" aria-hidden="true">
+  <div class="loader-name"><span>Bart</span><span>Firch</span></div>
+  <div class="loader-count"><span id="loader-num">00</span></div>
+  <div class="loader-line"><i id="loader-bar"></i></div>
+</div>
+
+<canvas class="gl" id="gl" aria-hidden="true"></canvas>
+
+<div class="cursor" id="cursor" aria-hidden="true"><span class="cursor-dot"></span><span class="cursor-label" id="cursor-label"></span></div>
+
+<header class="nav" id="nav">
+  <a class="nav-name" href="#top" data-cursor="Top">Bart Firch</a>
+  <nav class="nav-links" aria-label="Sections">
+    <a href="#about">About</a>
+    <a href="#work">Work with me</a>
+    <a href="#contact">Contact</a>
+  </nav>
+  <a class="btn btn-sm" href="#contact" data-magnetic data-cursor="">Schedule a consultation</a>
+</header>
+
+<main id="top">
+
+  <section class="hero" id="hero">
+    <div class="wrap hero-in">
+      <p class="eyebrow reveal-line">Health coaching <span class="dot"></span> Private yoga <span class="dot"></span> [City, State]</p>
+      <h1 class="hero-title" data-split>
+        <span class="l">A body that can keep</span>
+        <span class="l"><em>showing up</em></span>
+        <span class="l">for your life.</span>
+      </h1>
+      <div class="hero-foot">
+        <p class="hero-sub reveal-line">I'm Bart. Full-spectrum health coaching and private yoga, built around what you actually need, not a menu of workouts.</p>
+        <div class="hero-cta reveal-line">
+          <a class="btn" href="#contact" data-magnetic data-cursor="">Schedule a consultation</a>
+          <a class="link" href="#how" data-cursor="">How it starts</a>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-hint reveal-line" aria-hidden="true"><span>Scroll</span><i></i></div>
+  </section>
+
+  <section class="arrive" id="arrive">
+    <div class="arrive-pin">
+      <figure class="gl-fig arrive-fig" data-gl data-focus="0.68 0.38">
+        <img style="object-position:68% 38%" src="img/bart-10.jpg" alt="Bart with arms crossed against a blue sky" width="2000" height="1334" loading="eager" decoding="async">
+      </figure>
+      <div class="arrive-shade" aria-hidden="true"></div>
+      <div class="arrive-copy">
+        <p class="arrive-lead" data-split>Nearly twenty years of helping people move better, get stronger, and stay in one piece.</p>
+        <p class="arrive-cap eyebrow">Bart Firch <span class="dot"></span> [City], 2026</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="about" id="about">
+    <div class="wrap about-grid">
+      <div class="about-text">
+        <p class="eyebrow reveal-line">About</p>
+        <p class="about-p reveal-line">Personal training. Yoga. Kinesiology and anatomy. Physical education, corporate fitness, injury prevention, running, athletics. I've done the work in all of them, for a long time.</p>
+        <p class="about-p reveal-line">What ties it together is simple. I look at the whole person, figure out what they actually need, and help them do it.</p>
+        <p class="about-pull" data-split>No program off a shelf. <em>No jargon.</em> Just clear work, done well.</p>
+      </div>
+      <figure class="gl-fig about-fig" data-gl data-focus="0.5 0.35" data-cursor="">
+        <img style="object-position:50% 35%" src="img/bart-23.jpg" alt="Portrait of Bart beside a metal sculpture" width="1334" height="2000" loading="lazy" decoding="async">
+      </figure>
+    </div>
+  </section>
+
+  <section class="work" id="work">
+    <div class="wrap">
+      <div class="work-head">
+        <p class="eyebrow reveal-line">Two ways to work with me</p>
+        <h2 class="h2" data-split>Whole person. <em>Two doors.</em></h2>
+      </div>
+      <div class="work-grid">
+        <article class="offer">
+          <figure class="gl-fig offer-fig" data-gl data-focus="0.5 0.45" data-cursor="Read">
+            <img style="object-position:50% 45%" src="img/bart-9.jpg" alt="Bart climbing stadium bleachers" width="2000" height="1334" loading="lazy" decoding="async">
+          </figure>
+          <div class="offer-body">
+            <p class="eyebrow reveal-line">01</p>
+            <h3 class="h3 reveal-line">Full-Spectrum Health Coaching</h3>
+            <p class="reveal-line">Strength, weight loss, nutrition, running, mobility, flexibility, recovery, injury prevention, learning the equipment, and the habits around all of it. I look at the whole picture and we work on what actually matters, in the order it matters.</p>
+            <a class="link reveal-line" href="#contact" data-cursor="">Schedule a consultation</a>
+          </div>
+        </article>
+        <article class="offer offer-b">
+          <figure class="gl-fig offer-fig" data-gl data-focus="0.5 0.55" data-cursor="Read">
+            <img style="object-position:50% 55%" src="img/bart-21.jpg" alt="Bart in a low lunge on a yoga mat beside a fountain" width="2000" height="1334" loading="lazy" decoding="async">
+          </figure>
+          <div class="offer-body">
+            <p class="eyebrow reveal-line">02</p>
+            <h3 class="h3 reveal-line">Private Yoga &amp; Yoga Education</h3>
+            <p class="reveal-line">Private instruction for individuals and small groups. And for teachers: anatomy, kinesiology, and movement, applied to real practice. Clear, practical, and grounded in how bodies actually work.</p>
+            <a class="link reveal-line" href="#contact" data-cursor="">Schedule a consultation</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="wrap how-grid">
+      <div class="how-head">
+        <p class="eyebrow reveal-line">How it starts</p>
+        <h2 class="h2" data-split>It starts with <em>a conversation.</em></h2>
+        <p class="how-sub reveal-line">No booking calendars. No packages to pick from. We talk first.</p>
+      </div>
+      <ol class="steps">
+        <li class="step reveal-line"><span class="step-n">01</span><div><h3 class="h3">We talk</h3><p>A consultation. You tell me what's going on and what you want. I listen and ask questions.</p></div></li>
+        <li class="step reveal-line"><span class="step-n">02</span><div><h3 class="h3">I tell you what I think</h3><p>Honestly. What you need, what you don't, and whether I'm the right person to help.</p></div></li>
+        <li class="step reveal-line"><span class="step-n">03</span><div><h3 class="h3">We get to work</h3><p>Coaching, yoga, or both. Built around your life and adjusted as you go.</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="exp" id="experience" aria-label="Experience">
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>Personal training</span><span>Yoga</span><span>Kinesiology</span><span>Anatomy</span><span>Physical education</span><span>Corporate fitness</span><span>Injury prevention</span><span>Running</span><span>Athletics</span>
+        <span>Personal training</span><span>Yoga</span><span>Kinesiology</span><span>Anatomy</span><span>Physical education</span><span>Corporate fitness</span><span>Injury prevention</span><span>Running</span><span>Athletics</span>
+      </div>
+    </div>
+    <div class="wrap exp-grid">
+      <p class="exp-line" data-split>Nearly twenty years across personal training, yoga, kinesiology, anatomy, physical education, corporate fitness, injury prevention, running, and athletics.</p>
+      <figure class="gl-fig exp-fig" data-gl data-focus="0.5 0.4">
+        <img style="object-position:50% 40%" src="img/bart-24.jpg" alt="Bart running on a brick path" width="1334" height="2000" loading="lazy" decoding="async">
+      </figure>
+    </div>
+  </section>
+
+  <section class="contact" id="contact">
+    <div class="wrap contact-grid">
+      <div class="contact-head">
+        <p class="eyebrow reveal-line">Contact</p>
+        <h2 class="h2 h2-big" data-split>Let's <em>talk.</em></h2>
+        <p class="contact-sub reveal-line">Tell me a little about what's going on. I'll get back to you and we'll set up a time to talk it through.</p>
+        <ul class="quiet reveal-line">
+          <li><a href="mailto:hello@example.com" data-cursor="">[your@email.com]</a></li>
+          <li><a href="https://www.linkedin.com/" rel="noopener" target="_blank" data-cursor="">LinkedIn</a></li>
+          <li>[City, State]</li>
+        </ul>
+      </div>
+      <!-- Wire this form to Formspree, Netlify Forms or a mailto before launch. -->
+      <form class="form reveal-line" id="form" action="#" novalidate>
+        <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" type="text" autocomplete="name" required></div>
+        <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
+        <div class="field"><label for="f-msg">What's going on?</label><textarea id="f-msg" name="message" rows="3" required></textarea></div>
+        <button class="btn" type="submit" data-magnetic data-cursor="">Schedule a consultation</button>
+        <p class="form-note" id="form-note" aria-live="polite"></p>
+      </form>
+    </div>
+    <figure class="gl-fig contact-fig" data-gl data-focus="0.7 0.5">
+      <img style="object-position:70% 50%" src="img/bart-14.jpg" alt="Bart with one hand on a chain-link fence" width="2000" height="1334" loading="lazy" decoding="async">
+    </figure>
+  </section>
+
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <span>Bart Firch <span class="dot"></span> [City, State]</span>
+      <span><a href="mailto:hello@example.com">[your@email.com]</a> <span class="dot"></span> <a href="https://www.linkedin.com/" rel="noopener" target="_blank">LinkedIn</a> <span class="dot"></span> © 2026</span>
+    </div>
+  </footer>
+
+</main>
+
+<script type="module" src="js/site.js"></script>
+</body>
+</html>
