@@ -179,13 +179,13 @@ void main(){
 const planeFrag = `
 uniform sampler2D uTex;
 uniform vec2 uPlane, uImage, uMouse, uFocus;
-uniform float uHover, uVel, uReveal, uTime, uWarm, uOpacity;
+uniform float uHover, uVel, uReveal, uTime, uWarm, uOpacity, uTopR, uBotR, uPx;
 varying vec2 vUv;
 vec2 cover(vec2 uv, vec2 plane, vec2 img){
   float pr = plane.x / plane.y; float ir = img.x / img.y;
   vec2 s = vec2(1.0);
   if (pr > ir) s.y = ir / pr; else s.x = pr / ir;
-  vec2 origin = clamp(uFocus - s * 0.5, vec2(0.0), vec2(1.0) - s);
+  vec2 origin = uFocus * (vec2(1.0) - s);
   return origin + uv * s;
 }
 void main(){
@@ -206,7 +206,16 @@ void main(){
   col = pow(col, vec3(1.06));
   float e = uReveal * 1.12;
   float wipe = 1.0 - smoothstep(e - 0.12, e, 1.0 - vUv.y);
-  gl_FragColor = vec4(col, wipe * uOpacity);
+  /* mask: rounded box whose top and bottom corners can differ (arch = top radius of half the width) */
+  vec2 hb = uPlane * 0.5;
+  vec2 q = (vUv - 0.5) * uPlane;
+  float rr = q.y > 0.0 ? uTopR : uBotR;
+  rr = min(rr, min(hb.x, hb.y));
+  vec2 d2 = abs(q) - hb + rr;
+  float sd = length(max(d2, 0.0)) + min(max(d2.x, d2.y), 0.0) - rr;
+  float aa = max(uPx, 1e-4);
+  float mask = 1.0 - smoothstep(-2.0 * aa, 0.0, sd);
+  gl_FragColor = vec4(col, wipe * uOpacity * mask);
 }`;
 
 /* grain runs after OutputPass, so it works in display (sRGB) space */
@@ -276,10 +285,10 @@ function initGL(manager) {
     const planeGeo = new THREE.PlaneGeometry(1, 1, 24, 24);
     document.querySelectorAll('.gl-fig[data-gl]').forEach((fig) => {
       const img = fig.querySelector('img');
-      const isHero = !!fig.closest('.arrive');
+      const gatesLoader = !!fig.closest('.hero');
       const tex = new THREE.Texture();
       tex.colorSpace = THREE.SRGBColorSpace;
-      tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false;
+      tex.minFilter = THREE.LinearMipmapLinearFilter; tex.generateMipmaps = true;
       tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
       const f = (fig.dataset.focus || '0.5 0.5').split(/\s+/).map(Number);
       const mat = new THREE.ShaderMaterial({
@@ -289,32 +298,33 @@ function initGL(manager) {
           uImage: { value: new THREE.Vector2(+img.getAttribute('width') || 3, +img.getAttribute('height') || 2) },
           uMouse: { value: new THREE.Vector2(0.5, 0.5) }, uHover: { value: 0 }, uVel: { value: 0 }, uReveal: { value: 0 },
           uTime: { value: 0 }, uWarm: { value: 0.6 }, uFocus: { value: new THREE.Vector2(f[0], 1 - f[1]) }, uOpacity: { value: 1 },
+          uTopR: { value: 0 }, uBotR: { value: 0 }, uPx: { value: 1 },
         },
       });
       const mesh = new THREE.Mesh(planeGeo, mat);
       mesh.frustumCulled = false;
       mesh.visible = false;
       scene.add(mesh);
-      const plane = { fig, img, mesh, mat, mouse: new THREE.Vector2(0.5, 0.5), loaded: false, wanted: false, dead: false };
+      const plane = { fig, img, mesh, mat, shape: fig.dataset.shape || 'rect', mouse: new THREE.Vector2(0.5, 0.5), loaded: false, wanted: false, dead: false };
       plane.syncOpacity = () => { mat.uniforms.uOpacity.value = parseFloat(getComputedStyle(fig).opacity) || 1; };
       plane.syncOpacity();
       plane.reveal = () => gsap.to(mat.uniforms.uReveal, { value: 1, duration: 1.7, ease: 'expo.out' });
       plane.want = () => { plane.wanted = true; if (plane.loaded) plane.reveal(); };
       GL.planes.push(plane);
-      if (isHero) manager.itemStart(img.src);
+      if (gatesLoader) manager.itemStart(img.src);
       img.loading = 'eager';
       const ready = () => {
         tex.image = img; tex.needsUpdate = true;
         try { renderer.initTexture(tex); } catch (e) { /* upload happens on first draw */ }
         plane.loaded = true;
         if (plane.wanted) plane.reveal();
-        if (isHero) manager.itemEnd(img.src);
+        if (gatesLoader) manager.itemEnd(img.src);
       };
-      const failed = () => { plane.dead = true; fig.classList.add('gl-off'); if (isHero) manager.itemEnd(img.src); };
+      const failed = () => { plane.dead = true; fig.classList.add('gl-off'); if (gatesLoader) manager.itemEnd(img.src); };
       (img.decode ? img.decode() : Promise.resolve()).then(ready).catch(() => {
         if (img.complete && img.naturalWidth) ready(); else failed();
       });
-      if (fine) {
+      if (fine && fig.dataset.shape !== 'none') {
         fig.addEventListener('pointerenter', () => gsap.to(mat.uniforms.uHover, { value: 1, duration: 0.9, ease: 'expo.out', overwrite: true }));
         fig.addEventListener('pointerleave', () => gsap.to(mat.uniforms.uHover, { value: 0, duration: 1.1, ease: 'expo.out', overwrite: true }));
         fig.addEventListener('pointermove', (e) => {
@@ -345,16 +355,17 @@ function onResize() {
   if (w === lastW && h === lastH) return;
   lastW = w; lastH = h;
   renderer.setPixelRatio(pickRatio(w, h));
+  const pr = renderer.getPixelRatio();
   renderer.setSize(w, h, false);
+  composer.setPixelRatio(pr);
   composer.setSize(w, h);
   camera.aspect = w / h;
   camera.fov = 2 * Math.atan((h / 2) / 1000) * 180 / Math.PI;
   camera.updateProjectionMatrix();
-  const pr = renderer.getPixelRatio();
   pMat.uniforms.uArea.value.set(w, h);
   pMat.uniforms.uPixelRatio.value = pr;
   grainPass.uniforms.uRes.value.set(w * pr, h * pr);
-  for (const p of GL.planes) p.syncOpacity();
+  for (const p of GL.planes) { p.syncOpacity(); p.mat.uniforms.uPx.value = 1 / pr; }
 }
 
 let hidden = false;
@@ -384,6 +395,9 @@ function render() {
     p.mesh.scale.set(r.width, r.height, 1);
     p.mesh.position.set(r.left + r.width / 2 - w / 2, -(r.top + r.height / 2 - h / 2), 0);
     p.mat.uniforms.uPlane.value.set(r.width, r.height);
+    if (p.shape === 'arch') { p.mat.uniforms.uTopR.value = r.width * 0.5; p.mat.uniforms.uBotR.value = 10; }
+    else if (p.shape === 'rect') { p.mat.uniforms.uTopR.value = 18; p.mat.uniforms.uBotR.value = 18; }
+    else { p.mat.uniforms.uTopR.value = 0; p.mat.uniforms.uBotR.value = 0; }
     p.mat.uniforms.uVel.value = GL.vel;
     p.mat.uniforms.uTime.value = t;
     p.mat.uniforms.uMouse.value.lerp(p.mouse, 0.1);
@@ -428,6 +442,7 @@ function start() {
   const heroWords = hero.querySelectorAll('.wi');
   const heroLines = hero.querySelectorAll('.reveal-line');
   const arriveFig = document.querySelector('.arrive-fig');
+  const heroFig = document.querySelector('.hero-fig');
   const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
   tl.to(loader, { clipPath: 'inset(0 0 100% 0)', duration: 1.1, ease: 'expo.inOut', delay: 0.35, onComplete: () => { loader.style.display = 'none'; } })
     .add(() => { if (lenis) lenis.start(); GL.fadeTarget = 1; }, '-=0.5')
@@ -435,7 +450,7 @@ function start() {
     .to(heroLines, { opacity: 1, y: 0, duration: 1.2, stagger: 0.1 }, '-=1.0');
   if (reduced) tl.progress(1);
   setupScroll(arriveFig);
-  setupCursor();
+  setupPointer();
   setupMagnetic();
   setupForm();
   setupMarquee();
@@ -446,10 +461,12 @@ function start() {
 function setupScroll(arriveFig) {
   const arrive = document.querySelector('.arrive');
   const arriveWords = arrive.querySelectorAll('.wi');
-  gsap.to(arriveFig, { '--p': 1, ease: 'none', scrollTrigger: { trigger: arrive, start: 'top top', end: 'bottom bottom', scrub: true } });
-  gsap.to('.arrive-copy', { opacity: 1, y: 0, ease: 'none', scrollTrigger: { trigger: arrive, start: '55% bottom', end: '80% bottom', scrub: true,
-    onEnter: () => gsap.to(arriveWords, { y: 0, duration: 1.3, ease: 'expo.out', stagger: 0.03, overwrite: true }) } });
-  gsap.to('.arrive-shade', { opacity: 1, ease: 'none', scrollTrigger: { trigger: arrive, start: '45% bottom', end: '80% bottom', scrub: true } });
+  const arriveCopy = arrive.querySelector('.arrive-copy');
+  gsap.set(arriveCopy, { opacity: 0, y: 24 });
+  ScrollTrigger.create({ trigger: arrive, start: 'top 62%', once: true, onEnter: () => {
+    gsap.to(arriveCopy, { opacity: 1, y: 0, duration: 1.1, ease: 'expo.out' });
+    gsap.to(arriveWords, { y: 0, duration: 1.3, ease: 'expo.out', stagger: 0.03, overwrite: true });
+  } });
 
   /* particle field: strong in the hero, faint through the page, back for the close */
   let heroFade = 1, closeFade = 0;
@@ -458,23 +475,24 @@ function setupScroll(arriveFig) {
   ScrollTrigger.create({ trigger: '.contact', start: 'top 80%', end: 'bottom bottom', onUpdate: (st) => { closeFade = 0.1 + st.progress * 0.55; applyFade(); }, onLeaveBack: () => { closeFade = 0; applyFade(); } });
 
   /* photo reveals: GL planes on desktop, the DOM image elsewhere */
+  const heroFigure = document.querySelector('.hero-fig');
   if (GL.planes.length) {
     GL.planes.forEach((p) => {
-      if (p.fig === arriveFig) { gsap.delayedCall(0.9, p.want); return; }
-      ScrollTrigger.create({ trigger: p.fig, start: 'top 88%', once: true, onEnter: p.want });
+      if (p.fig === heroFigure) { gsap.delayedCall(0.55, p.want); return; }
+      ScrollTrigger.create({ trigger: p.fig, start: 'top 92%', once: true, onEnter: p.want });
     });
   } else if (!reduced) {
     document.querySelectorAll('.gl-fig img').forEach((img) => {
       gsap.set(img, { clipPath: 'inset(100% 0 0 0)', scale: 1.14 });
       const reveal = () => gsap.to(img, { clipPath: 'inset(0% 0 0 0)', scale: 1, duration: 1.7, ease: 'expo.out', overwrite: true });
-      if (img.closest('.arrive')) gsap.delayedCall(0.9, reveal);
-      else ScrollTrigger.create({ trigger: img, start: 'top 88%', once: true, onEnter: reveal });
+      if (img.closest('.hero')) gsap.delayedCall(0.55, reveal);
+      else ScrollTrigger.create({ trigger: img, start: 'top 92%', once: true, onEnter: reveal });
     });
   }
 
   /* depth: the figures drift against the page, which the GL planes pick up from the rect */
   if (!reduced) {
-    document.querySelectorAll('.about-fig, .offer-fig, .exp-fig').forEach((fig, i) => {
+    document.querySelectorAll('.about-fig, .exp-fig').forEach((fig, i) => {
       gsap.fromTo(fig, { y: 26 + i * 4 }, { y: -26 - i * 4, ease: 'none',
         scrollTrigger: { trigger: fig, start: 'top bottom', end: 'bottom top', scrub: 0.6 } });
     });
@@ -503,31 +521,17 @@ function setupScroll(arriveFig) {
   if (reduced) {
     ScrollTrigger.getAll().forEach((s) => s.kill());
     gsap.set('.wi, .reveal-line', { clearProps: 'all' });
-    gsap.set('.arrive-copy, .arrive-shade', { opacity: 1, y: 0 });
-    gsap.set(arriveFig, { '--p': 1 });
+    gsap.set('.arrive-copy', { opacity: 1, y: 0 });
   }
 }
 
-/* ---------- cursor + magnetic ---------- */
-function setupCursor() {
+/* ---------- pointer tracking for the dust field ---------- */
+function setupPointer() {
   if (!fine || reduced) return;
-  const cur = document.getElementById('cursor'), label = document.getElementById('cursor-label');
-  html.classList.add('has-cursor');
-  const xTo = gsap.quickTo(cur, 'x', { duration: 0.35, ease: 'power3' }), yTo = gsap.quickTo(cur, 'y', { duration: 0.35, ease: 'power3' });
   window.addEventListener('pointermove', (e) => {
-    xTo(e.clientX); yTo(e.clientY);
     GL.mouseT.set(e.clientX - W() / 2, -(e.clientY - H() / 2));
   }, { passive: true });
   document.addEventListener('pointerleave', () => GL.mouseT.set(9999, 9999));
-  document.querySelectorAll('[data-cursor]').forEach((el) => {
-    el.addEventListener('pointerenter', () => {
-      const text = el.getAttribute('data-cursor');
-      cur.classList.toggle('is-label', !!text);
-      cur.classList.toggle('is-hover', !text);
-      label.textContent = text || '';
-    });
-    el.addEventListener('pointerleave', () => { cur.classList.remove('is-label', 'is-hover'); });
-  });
 }
 function setupMagnetic() {
   if (!fine || reduced) return;
