@@ -164,10 +164,14 @@ void main(){
 }`;
 
 const planeVert = `
+uniform float uVel;
+uniform vec2 uPlane;
 varying vec2 vUv;
 void main(){
   vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec3 p = position;
+  p.y += sin(uv.x * 3.14159) * uVel * 0.3 / max(uPlane.y, 1.0);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
 }`;
 const planeFrag = `
 uniform sampler2D uTex;
@@ -271,7 +275,7 @@ function initGL(manager) {
 
   /* photo planes: the DOM <img> is the texture source, so each photo is fetched once */
   if (usePlanes()) {
-    const planeGeo = new THREE.PlaneGeometry(1, 1);
+    const planeGeo = new THREE.PlaneGeometry(1, 1, 24, 24);
     document.querySelectorAll('.gl-fig[data-gl]').forEach((fig) => {
       const img = fig.querySelector('img');
       const gatesLoader = !!fig.closest('.hero');
