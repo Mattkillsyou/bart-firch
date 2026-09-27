@@ -164,22 +164,15 @@ void main(){
 }`;
 
 const planeVert = `
-uniform float uHover, uVel;
-uniform vec2 uMouse, uPlane;
 varying vec2 vUv;
 void main(){
   vUv = uv;
-  vec3 p = position;
-  float d = distance(uv, uMouse);
-  float bump = smoothstep(0.55, 0.0, d) * uHover;
-  p.z += bump * 36.0;
-  p.y += sin(uv.x * 3.14159) * uVel * 0.3 / max(uPlane.y, 1.0);
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
 }`;
 const planeFrag = `
 uniform sampler2D uTex;
-uniform vec2 uPlane, uImage, uMouse, uFocus;
-uniform float uHover, uVel, uReveal, uTime, uWarm, uOpacity, uTopR, uBotR, uPx;
+uniform vec2 uPlane, uImage, uFocus;
+uniform float uVel, uReveal, uWarm, uOpacity, uTopR, uBotR, uPx;
 varying vec2 vUv;
 vec2 cover(vec2 uv, vec2 plane, vec2 img){
   float pr = plane.x / plane.y; float ir = img.x / img.y;
@@ -192,10 +185,6 @@ void main(){
   vec2 uv = vUv;
   float z = mix(1.16, 1.0, uReveal);
   uv = (uv - 0.5) / z + 0.5;
-  vec2 dm = uv - uMouse;
-  float dd = length(dm);
-  float k = smoothstep(0.5, 0.0, dd) * uHover;
-  uv -= dm * k * 0.09;
   vec2 cuv = cover(uv, uPlane, uImage);
   float sp = uVel * 0.00022;
   float r = texture2D(uTex, cuv + vec2(0.0, sp)).r;
@@ -282,7 +271,7 @@ function initGL(manager) {
 
   /* photo planes: the DOM <img> is the texture source, so each photo is fetched once */
   if (usePlanes()) {
-    const planeGeo = new THREE.PlaneGeometry(1, 1, 24, 24);
+    const planeGeo = new THREE.PlaneGeometry(1, 1);
     document.querySelectorAll('.gl-fig[data-gl]').forEach((fig) => {
       const img = fig.querySelector('img');
       const gatesLoader = !!fig.closest('.hero');
@@ -296,8 +285,8 @@ function initGL(manager) {
         uniforms: {
           uTex: { value: tex }, uPlane: { value: new THREE.Vector2(1, 1) },
           uImage: { value: new THREE.Vector2(+img.getAttribute('width') || 3, +img.getAttribute('height') || 2) },
-          uMouse: { value: new THREE.Vector2(0.5, 0.5) }, uHover: { value: 0 }, uVel: { value: 0 }, uReveal: { value: 0 },
-          uTime: { value: 0 }, uWarm: { value: 0.6 }, uFocus: { value: new THREE.Vector2(f[0], 1 - f[1]) }, uOpacity: { value: 1 },
+          uVel: { value: 0 }, uReveal: { value: 0 },
+          uWarm: { value: 0.6 }, uFocus: { value: new THREE.Vector2(f[0], 1 - f[1]) }, uOpacity: { value: 1 },
           uTopR: { value: 0 }, uBotR: { value: 0 }, uPx: { value: 1 },
         },
       });
@@ -305,7 +294,7 @@ function initGL(manager) {
       mesh.frustumCulled = false;
       mesh.visible = false;
       scene.add(mesh);
-      const plane = { fig, img, mesh, mat, shape: fig.dataset.shape || 'rect', mouse: new THREE.Vector2(0.5, 0.5), loaded: false, wanted: false, dead: false };
+      const plane = { fig, img, mesh, mat, shape: fig.dataset.shape || 'rect', loaded: false, wanted: false, dead: false };
       plane.syncOpacity = () => { mat.uniforms.uOpacity.value = parseFloat(getComputedStyle(fig).opacity) || 1; };
       plane.syncOpacity();
       plane.reveal = () => gsap.to(mat.uniforms.uReveal, { value: 1, duration: 1.7, ease: 'expo.out' });
@@ -324,14 +313,6 @@ function initGL(manager) {
       (img.decode ? img.decode() : Promise.resolve()).then(ready).catch(() => {
         if (img.complete && img.naturalWidth) ready(); else failed();
       });
-      if (fine && fig.dataset.shape !== 'none') {
-        fig.addEventListener('pointerenter', () => gsap.to(mat.uniforms.uHover, { value: 1, duration: 0.9, ease: 'expo.out', overwrite: true }));
-        fig.addEventListener('pointerleave', () => gsap.to(mat.uniforms.uHover, { value: 0, duration: 1.1, ease: 'expo.out', overwrite: true }));
-        fig.addEventListener('pointermove', (e) => {
-          const r = fig.getBoundingClientRect();
-          plane.mouse.set((e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height);
-        });
-      }
     });
     html.classList.add('gl-planes');
   }
@@ -399,8 +380,6 @@ function render() {
     else if (p.shape === 'rect') { p.mat.uniforms.uTopR.value = 18; p.mat.uniforms.uBotR.value = 18; }
     else { p.mat.uniforms.uTopR.value = 0; p.mat.uniforms.uBotR.value = 0; }
     p.mat.uniforms.uVel.value = GL.vel;
-    p.mat.uniforms.uTime.value = t;
-    p.mat.uniforms.uMouse.value.lerp(p.mouse, 0.1);
   }
   grainPass.uniforms.uTime.value = t;
   grainPass.uniforms.uGlow.value = 0.35 + GL.fade * 0.65;
