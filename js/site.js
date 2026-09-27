@@ -545,7 +545,7 @@ function setupMarquee() {
    Leave it empty and the form falls back to opening the visitor's mail client. */
 const FORM = {
   endpoint: 'https://api.web3forms.com/submit',
-  extra: { access_key: 'WEB3FORMS_ACCESS_KEY' },
+  extra: { access_key: '07ae0616-2fcd-4869-8586-c0c850a5a5fb' },
   fallbackEmail: 'bart.firch@gmail.com',
 };
 
