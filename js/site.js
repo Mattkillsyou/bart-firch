@@ -377,6 +377,7 @@ function render() {
     p.mesh.position.set(r.left + r.width / 2 - w / 2, -(r.top + r.height / 2 - h / 2), 0);
     p.mat.uniforms.uPlane.value.set(r.width, r.height);
     if (p.shape === 'arch') { p.mat.uniforms.uTopR.value = r.width * 0.5; p.mat.uniforms.uBotR.value = 10; }
+    else if (p.shape === 'round') { const rr = Math.min(r.width, r.height) * 0.5; p.mat.uniforms.uTopR.value = rr; p.mat.uniforms.uBotR.value = rr; }
     else if (p.shape === 'rect') { p.mat.uniforms.uTopR.value = 18; p.mat.uniforms.uBotR.value = 18; }
     else { p.mat.uniforms.uTopR.value = 0; p.mat.uniforms.uBotR.value = 0; }
     p.mat.uniforms.uVel.value = GL.vel;
