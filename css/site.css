@@ -188,6 +188,9 @@ html.gl-planes .gl-fig.gl-off[data-shape="round"]{border-radius:50%}
 .field input,.field textarea{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;color:var(--ink);font:inherit;font-size:18px;padding:10px 0;transition:border-color .4s;resize:none}
 .field input:focus,.field textarea:focus{outline:none;border-bottom-width:2px;border-color:var(--accent)}
 .field [aria-invalid="true"]{border-color:var(--accent)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
+.form.is-sending{opacity:.6;pointer-events:none}
+.form-note.is-error{color:#F0866B}
 .form-note{font-size:14px;color:var(--accent);min-height:1.5em;justify-self:stretch}
 @media (max-width:840px){.contact-grid{grid-template-columns:1fr}}
 

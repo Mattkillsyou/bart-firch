@@ -541,21 +541,81 @@ function setupMarquee() {
 }
 
 /* ---------- form ---------- */
+/* Delivery. endpoint: a URL that accepts a JSON POST (Web3Forms, Formspree, a Worker).
+   Leave it empty and the form falls back to opening the visitor's mail client. */
+const FORM = {
+  endpoint: 'https://api.web3forms.com/submit',
+  extra: { access_key: 'WEB3FORMS_ACCESS_KEY' },
+  fallbackEmail: 'bart.firch@gmail.com',
+};
+
 function setupForm() {
-  const form = document.getElementById('form'), note = document.getElementById('form-note');
+  const form = document.getElementById('form');
+  const note = document.getElementById('form-note');
+  const submit = document.getElementById('form-submit');
   const fields = [form.elements.name, form.elements.email, form.elements.message];
+  const label = submit.textContent;
   fields.forEach((f) => f.setAttribute('aria-describedby', 'form-note'));
-  form.addEventListener('submit', (e) => {
+
+  const say = (text, isError) => {
+    note.textContent = text;
+    note.classList.toggle('is-error', !!isError);
+  };
+
+  const mailtoFallback = (data) => {
+    if (!FORM.fallbackEmail) {
+      say('Something went wrong sending that. Please try again in a moment.', true);
+      return;
+    }
+    const body = 'Name: ' + data.name + '\nEmail: ' + data.email + '\n\n' + data.message;
+    window.location.href = 'mailto:' + FORM.fallbackEmail
+      + '?subject=' + encodeURIComponent('Consultation request from ' + data.name)
+      + '&body=' + encodeURIComponent(body);
+    say('Opening your email app so you can send it directly.');
+  };
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (form.elements.company && form.elements.company.value) return; // honeypot
     fields.forEach((f) => f.removeAttribute('aria-invalid'));
     const bad = fields.filter((f) => !f.value.trim() || (f.type === 'email' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.value.trim())));
     if (bad.length) {
       bad.forEach((f) => f.setAttribute('aria-invalid', 'true'));
-      note.textContent = 'Add your name, a working email, and a line about what is going on.';
+      say('Add your name, a working email, and a line about what is going on.', true);
       bad[0].focus();
       return;
     }
-    note.textContent = 'Thanks, ' + form.elements.name.value.trim().split(' ')[0] + '. I will be in touch.';
-    form.reset();
+
+    const data = {
+      name: form.elements.name.value.trim(),
+      email: form.elements.email.value.trim(),
+      message: form.elements.message.value.trim(),
+    };
+    const first = data.name.split(' ')[0];
+
+    const wired = FORM.endpoint && !/WEB3FORMS_ACCESS_KEY/.test(FORM.extra.access_key || '');
+    if (!wired) { mailtoFallback(data); return; }
+
+    form.classList.add('is-sending');
+    submit.textContent = 'Sending…';
+    say('Sending…');
+    try {
+      const res = await fetch(FORM.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(Object.assign({
+          subject: 'Consultation request from ' + data.name,
+          from_name: 'bartonfirch.com',
+        }, FORM.extra, data, { replyto: data.email })),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      form.reset();
+      say('Thanks, ' + first + '. That came through, and I will be in touch.');
+    } catch (err) {
+      mailtoFallback(data);
+    } finally {
+      form.classList.remove('is-sending');
+      submit.textContent = label;
+    }
   });
 }

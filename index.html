@@ -188,12 +188,13 @@
           <p class="signoff-text">Bart Firch<span class="dot"></span>Every inquiry comes to me.</p>
         </div>
       </div>
-      <!-- Wire this form to Formspree, Netlify Forms or a mailto before launch. -->
-      <form class="form reveal-line" id="form" action="#" novalidate>
+      <!-- Delivery is configured in js/site.js: set FORM.endpoint and FORM.fallbackEmail. -->
+      <form class="form reveal-line" id="form" novalidate>
         <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" type="text" autocomplete="name" required></div>
         <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
         <div class="field"><label for="f-msg">What's going on?</label><textarea id="f-msg" name="message" rows="3" required></textarea></div>
-        <button class="btn" type="submit" data-magnetic>Request a consultation</button>
+        <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <button class="btn" type="submit" id="form-submit" data-magnetic>Request a consultation</button>
         <p class="form-note" id="form-note" role="status"></p>
       </form>
     </div>
