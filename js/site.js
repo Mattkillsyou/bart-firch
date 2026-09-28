@@ -605,7 +605,7 @@ function setupForm() {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(Object.assign({
           subject: 'Consultation request from ' + data.name,
-          from_name: 'bartonfirch.com',
+          from_name: 'Bart Firch website',
         }, FORM.extra, data, { replyto: data.email })),
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
