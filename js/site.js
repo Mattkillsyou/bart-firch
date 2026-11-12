@@ -240,6 +240,9 @@ function initGL(manager) {
   renderer.setSize(W(), H(), false);
   renderer.setClearColor(new THREE.Color('#0B0B0C'), 1);
   scene = new THREE.Scene();
+  /* the clear color set above is encoded for the screen, but the composer clears a linear target with it,
+     so OutputPass encoded it twice and the page drew #3A3A3A. A scene background clears in linear space. */
+  scene.background = new THREE.Color('#0B0B0C');
   const dist = 1000;
   camera = new THREE.PerspectiveCamera(2 * Math.atan((H() / 2) / dist) * 180 / Math.PI, W() / H(), 10, 3000);
   camera.position.z = dist;
