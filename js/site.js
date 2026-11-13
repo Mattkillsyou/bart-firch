@@ -9,16 +9,24 @@ const html = document.documentElement;
 const { gsap, ScrollTrigger } = window;
 if (!gsap || !ScrollTrigger) throw new Error('GSAP failed to load; the static fallback stays on');
 html.classList.remove('no-js');
+html.classList.add('js-on');
 gsap.registerPlugin(ScrollTrigger);
 ScrollTrigger.config({ ignoreMobileResize: true });
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const touch = window.matchMedia('(pointer: coarse)').matches;
 const fine = window.matchMedia('(pointer: fine)').matches;
-const hasGL = (() => { try { return !!document.createElement('canvas').getContext('webgl2'); } catch (e) { return false; } })();
-let useGL = hasGL && !reduced;
+/* Software renderers (no GPU, virtual desktop, blocked driver) get the DOM photos instead of a scene at 2 frames
+   per second. The flag catches Chromium's own fallback; the renderer name also catches Firefox and forced headless runs.
+   ponytail: a slow real GPU still gets WebGL; add a frame-time watchdog if that is ever reported. */
+const hasGL = !reduced && (() => { try {
+  const gl = document.createElement('canvas').getContext('webgl2', { failIfMajorPerformanceCaveat: true });
+  const dbg = gl && gl.getExtension('WEBGL_debug_renderer_info');
+  return !!gl && !/swiftshader|basic render|llvmpipe|softpipe/i.test(gl.getParameter(dbg ? dbg.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+} catch (e) { return false; } })();
+let useGL = hasGL;
 /* on touch the DOM draws the photos: native scroll runs off-thread, so GL planes would trail by a frame */
-const usePlanes = () => useGL && !touch;
+const usePlanes = () => useGL && !touch && !html.classList.contains('js-failed'); // late boot: the static page keeps its DOM photos
 if (reduced) html.classList.add('no-motion');
 
 /* ---------- split text ---------- */
@@ -50,11 +58,12 @@ document.querySelectorAll('[data-split]').forEach((el) => splitWords(el));
 let lenis = null;
 let scrollVel = 0;
 if (!reduced && window.Lenis) {
-  lenis = new window.Lenis({ lerp: 0.085, smoothWheel: true, syncTouch: false, wheelMultiplier: 0.95 });
+  lenis = window.__lenis = new window.Lenis({ lerp: 0.085, smoothWheel: true, syncTouch: false, wheelMultiplier: 0.95 });
   lenis.on('scroll', (e) => { scrollVel = e.velocity; ScrollTrigger.update(); });
   gsap.ticker.add((t) => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
-  lenis.stop();
+  /* scrolling stays locked under the intro, unless the static page is already showing (jsFailed in index.html) */
+  if (!html.classList.contains('js-failed')) lenis.stop();
 }
 const focusTarget = (target) => {
   if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
@@ -67,7 +76,8 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
     const target = document.querySelector(id);
     if (!target) return;
     e.preventDefault();
-    if (lenis) lenis.scrollTo(target, { offset: 0, duration: 1.6, easing: (t) => 1 - Math.pow(1 - t, 4), onComplete: () => focusTarget(target) });
+    /* Lenis ignores scroll-margin-top (css: it keeps section labels clear of the nav bar), so pass it as the offset */
+    if (lenis) lenis.scrollTo(target, { offset: -(parseFloat(getComputedStyle(target).scrollMarginTop) || 0), duration: 1.6, easing: (t) => 1 - Math.pow(1 - t, 4), onComplete: () => focusTarget(target) });
     else { target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }); focusTarget(target); }
   });
 });
@@ -77,7 +87,6 @@ const loader = document.getElementById('loader');
 const loaderNum = document.getElementById('loader-num');
 const loaderBar = document.getElementById('loader-bar');
 const loadState = { p: 0, shown: 0 };
-const t0 = performance.now();
 function setProgress(p) {
   loadState.p = Math.max(loadState.p, p);
   gsap.to(loadState, { shown: loadState.p, duration: 0.6, ease: 'power2.out', overwrite: true, onUpdate: () => {
@@ -89,7 +98,7 @@ function setProgress(p) {
 
 /* ---------- WebGL ---------- */
 const canvas = document.getElementById('gl');
-const GL = window.__GL = { planes: [], fade: 1, fadeTarget: 1, mouse: new THREE.Vector2(0, 0), mouseT: new THREE.Vector2(0, 0), vel: 0 };
+const GL = { planes: [], fade: 1, fadeTarget: 1, mouse: new THREE.Vector2(0, 0), mouseT: new THREE.Vector2(0, 0), vel: 0 };
 const W = () => canvas.clientWidth || html.clientWidth;
 const H = () => canvas.clientHeight || window.innerHeight;
 function pickRatio(w, h) {
@@ -281,7 +290,8 @@ function initGL(manager) {
     const planeGeo = new THREE.PlaneGeometry(1, 1, 24, 24);
     document.querySelectorAll('.gl-fig[data-gl]').forEach((fig) => {
       const img = fig.querySelector('img');
-      const gatesLoader = !!fig.closest('.hero');
+      const shown = fig.getClientRects().length > 0; // the hero figure is display:none below 981 px: leave it lazy, do not wait for it
+      const gatesLoader = shown && !!fig.closest('.hero');
       const tex = new THREE.Texture();
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.minFilter = THREE.LinearMipmapLinearFilter; tex.generateMipmaps = true;
@@ -301,14 +311,14 @@ function initGL(manager) {
       mesh.frustumCulled = false;
       mesh.visible = false;
       scene.add(mesh);
-      const plane = { fig, img, mesh, mat, shape: fig.dataset.shape || 'rect', loaded: false, wanted: false, dead: false };
+      const plane = { fig, img, mesh, mat, shape: fig.dataset.shape || 'rect', loaded: false, wanted: false, dead: false, gates: gatesLoader };
       plane.syncOpacity = () => { mat.uniforms.uOpacity.value = parseFloat(getComputedStyle(fig).opacity) || 1; };
       plane.syncOpacity();
       plane.reveal = () => gsap.to(mat.uniforms.uReveal, { value: 1, duration: 1.7, ease: 'expo.out' });
       plane.want = () => { plane.wanted = true; if (plane.loaded) plane.reveal(); };
       GL.planes.push(plane);
       if (gatesLoader) manager.itemStart(img.src);
-      img.loading = 'eager';
+      if (shown) img.loading = 'eager';
       const ready = () => {
         tex.image = img; tex.needsUpdate = true;
         try { renderer.initTexture(tex); } catch (e) { /* upload happens on first draw */ }
@@ -361,6 +371,7 @@ document.addEventListener('visibilitychange', () => { hidden = document.hidden; 
 
 function render() {
   if (!renderer || hidden) return;
+  onResize(); // no-op when the size is unchanged; fixes a renderer sized before the stylesheet applied (Safari runs deferred scripts without waiting for it)
   const t = clock.getElapsedTime();
   const w = W(), h = H();
   GL.vel += (Math.max(-30, Math.min(30, scrollVel)) - GL.vel) * 0.1;
@@ -407,7 +418,7 @@ if (useGL) {
     useGL = false; html.classList.remove('gl-on', 'gl-planes'); GL.planes.length = 0;
   }
 }
-if (!useGL || GL.planes.length === 0) assetsDone = true;
+if (!useGL || !GL.planes.some((p) => p.gates)) assetsDone = true;
 setProgress(0.15);
 let fontsDone = false;
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { fontsDone = true; loader.classList.add('fonts-in'); maybeStart(); });
@@ -417,39 +428,40 @@ let started = false;
 function maybeStart() {
   if (started || !assetsDone || !fontsDone) return;
   started = true;
-  const wait = Math.max(0, 1300 - (performance.now() - t0));
+  /* the loader is on screen from the first paint, so its 1.3 s minimum counts from navigation start */
+  const wait = Math.max(0, 1300 - performance.now());
   setTimeout(start, wait);
 }
 
 function start() {
-  window.__booted = true;
   setProgress(1);
   if (useGL && renderer) gsap.ticker.add(render);
   const hero = document.querySelector('.hero');
   const heroWords = hero.querySelectorAll('.wi');
   const heroLines = hero.querySelectorAll('.reveal-line');
-  const arriveFig = document.querySelector('.arrive-fig');
-  const heroFig = document.querySelector('.hero-fig');
   const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
   tl.to(loader, { clipPath: 'inset(0 0 100% 0)', duration: 1.1, ease: 'expo.inOut', delay: 0.35, onComplete: () => { loader.style.display = 'none'; } })
     .add(() => { if (lenis) lenis.start(); GL.fadeTarget = 1; }, '-=0.5')
     .to(heroWords, { y: 0, duration: 1.4, stagger: 0.045 }, '-=0.55')
     .to(heroLines, { opacity: 1, y: 0, duration: 1.2, stagger: 0.1 }, '-=1.0');
-  if (reduced) tl.progress(1);
-  setupScroll(arriveFig);
+  /* skip the intro when it would play over content the visitor already sees (reduced motion, or the static page shown after a slow load) */
+  if (reduced || html.classList.contains('js-failed')) tl.progress(1);
+  setupScroll();
   setupPointer();
   setupMagnetic();
   setupForm();
   setupMarquee();
   ScrollTrigger.refresh();
+  window.__booted = true; // last: if anything above throws, the 9 s timer in index.html still brings the static page back
 }
 
 /* ---------- scroll choreography ---------- */
-function setupScroll(arriveFig) {
+function setupScroll() {
+  const late = html.classList.contains('js-failed'); // booting on top of the static page: do not hide what is already on screen
   const arrive = document.querySelector('.arrive');
   const arriveWords = arrive.querySelectorAll('.wi');
   const arriveCopy = arrive.querySelector('.arrive-copy');
-  gsap.set(arriveCopy, { opacity: 0, y: 24 });
+  if (!late) gsap.set(arriveCopy, { opacity: 0, y: 24 });
   ScrollTrigger.create({ trigger: arrive, start: 'top 62%', once: true, onEnter: () => {
     gsap.to(arriveCopy, { opacity: 1, y: 0, duration: 1.1, ease: 'expo.out' });
     gsap.to(arriveWords, { y: 0, duration: 1.3, ease: 'expo.out', stagger: 0.03, overwrite: true });
@@ -468,7 +480,7 @@ function setupScroll(arriveFig) {
       if (p.fig === heroFigure) { gsap.delayedCall(0.55, p.want); return; }
       ScrollTrigger.create({ trigger: p.fig, start: 'top 92%', once: true, onEnter: p.want });
     });
-  } else if (!reduced) {
+  } else if (!reduced && !late) {
     document.querySelectorAll('.gl-fig img').forEach((img) => {
       gsap.set(img, { clipPath: 'inset(100% 0 0 0)', scale: 1.14 });
       const reveal = () => gsap.to(img, { clipPath: 'inset(0% 0 0 0)', scale: 1, duration: 1.7, ease: 'expo.out', overwrite: true });
@@ -485,15 +497,24 @@ function setupScroll(arriveFig) {
     });
   }
 
-  /* nav retracts going down, returns going up */
+  /* nav: a solid backing once it sits over content (a plain scroll listener, so it also works with
+     reduced motion, where the triggers below are removed and the bar never retracts) */
   const nav = document.getElementById('nav');
+  const navSolid = () => nav.classList.toggle('is-solid', window.scrollY > 80);
+  window.addEventListener('scroll', navSolid, { passive: true });
+  navSolid();
+
+  /* nav retracts going down, returns going up; one tween per change of direction */
+  let navDown = false;
+  const navTo = (down) => {
+    if (down === navDown) return;
+    navDown = down;
+    gsap.to(nav, { yPercent: down ? -140 : 0, duration: 0.5, ease: 'power3.out', overwrite: true });
+  };
   ScrollTrigger.create({
     start: 'top -80', end: 99999,
-    onUpdate: (st) => {
-      const down = st.direction === 1;
-      gsap.to(nav, { yPercent: down ? -140 : 0, duration: 0.5, ease: 'power3.out', overwrite: true });
-    },
-    onLeaveBack: () => gsap.to(nav, { yPercent: 0, duration: 0.4, ease: 'power3.out', overwrite: true }),
+    onUpdate: (st) => navTo(st.direction === 1),
+    onLeaveBack: () => navTo(false),
   });
 
   /* text */
@@ -536,16 +557,17 @@ function setupMagnetic() {
 function setupMarquee() {
   const mq = document.querySelector('.marquee'), mt = document.querySelector('.marquee-toggle');
   if (!mq || !mt) return;
+  /* the label is the one signal of state: it names what the button will do */
   mt.addEventListener('click', () => {
-    const on = mq.classList.toggle('is-paused');
-    mt.setAttribute('aria-pressed', String(on));
-    mt.textContent = on ? 'Play' : 'Pause';
+    mt.textContent = mq.classList.toggle('is-paused') ? 'Play' : 'Pause';
   });
 }
 
 /* ---------- form ---------- */
-/* Delivery. endpoint: a URL that accepts a JSON POST (Web3Forms, Formspree, a Worker).
-   Leave it empty and the form falls back to opening the visitor's mail client. */
+/* Delivery. With this script running, the form goes out as JSON to FORM.endpoint; if that fails, the visitor's
+   mail client opens. If this script never runs, the <form> in index.html posts itself to the same endpoint.
+   The access key and the sender name are in both files on purpose (this script must not depend on the HTML):
+   change both together. */
 const FORM = {
   endpoint: 'https://api.web3forms.com/submit',
   extra: { access_key: '07ae0616-2fcd-4869-8586-c0c850a5a5fb' },
@@ -558,6 +580,7 @@ function setupForm() {
   const submit = document.getElementById('form-submit');
   const fields = [form.elements.name, form.elements.email, form.elements.message];
   const label = submit.textContent;
+  const need = { name: 'your name', email: 'a working email', message: 'a line about what is going on' };
   fields.forEach((f) => f.setAttribute('aria-describedby', 'form-note'));
 
   const say = (text, isError) => {
@@ -574,17 +597,18 @@ function setupForm() {
     window.location.href = 'mailto:' + FORM.fallbackEmail
       + '?subject=' + encodeURIComponent('Consultation request from ' + data.name)
       + '&body=' + encodeURIComponent(body);
-    say('Opening your email app so you can send it directly.');
+    say('That did not send from here. Your email app should open so you can send it directly. If it does not, write to me at ' + FORM.fallbackEmail + '.', true);
   };
 
   form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (form.elements.company && form.elements.company.value) return; // honeypot
+    e.preventDefault(); // first: the form has a real action, so a return above this line would post it natively
+    if (form.classList.contains('is-sending')) return; // one send at a time
+    if (form.elements.botcheck?.checked) return; // honeypot (?. because an HTML file cached from before this change has no botcheck)
     fields.forEach((f) => f.removeAttribute('aria-invalid'));
     const bad = fields.filter((f) => !f.value.trim() || (f.type === 'email' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.value.trim())));
     if (bad.length) {
       bad.forEach((f) => f.setAttribute('aria-invalid', 'true'));
-      say('Add your name, a working email, and a line about what is going on.', true);
+      say('Add ' + new Intl.ListFormat('en').format(bad.map((f) => need[f.name])) + '.', true);
       bad[0].focus();
       return;
     }
@@ -596,13 +620,12 @@ function setupForm() {
     };
     const first = data.name.split(' ')[0];
 
-    const wired = FORM.endpoint && !/WEB3FORMS_ACCESS_KEY/.test(FORM.extra.access_key || '');
-    if (!wired) { mailtoFallback(data); return; }
-
     form.classList.add('is-sending');
+    submit.setAttribute('aria-disabled', 'true'); // not the disabled property: that would drop keyboard focus from the button
     submit.textContent = 'Sending…';
     say('Sending…');
     try {
+      /* the body is built by hand: never serialise the form here, its hidden inputs belong to the no-script post */
       const res = await fetch(FORM.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
@@ -610,6 +633,7 @@ function setupForm() {
           subject: 'Consultation request from ' + data.name,
           from_name: 'Bart Firch website',
         }, FORM.extra, data, { replyto: data.email })),
+        signal: AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined, // a hung request ends in the mail fallback, not a stuck form
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       form.reset();
@@ -618,7 +642,9 @@ function setupForm() {
       mailtoFallback(data);
     } finally {
       form.classList.remove('is-sending');
+      submit.removeAttribute('aria-disabled');
       submit.textContent = label;
     }
   });
+  form.noValidate = true; // last: the browser's own validation guards the plain post until this handler is attached
 }

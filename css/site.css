@@ -5,6 +5,7 @@
   --muted:#BFB9AE;
   --line:rgba(237,232,223,.16);
   --accent:#E0A25A;
+  --error:#F0866B;
   --serif:'Fraunces',Georgia,'Times New Roman',serif;
   --sans:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
   --gutter:clamp(20px,5vw,72px);
@@ -31,6 +32,8 @@ em{font-family:var(--serif);font-style:italic;font-weight:300;font-variation-set
 .wrap{padding-inline:var(--gutter);max-width:1680px;margin-inline:auto}
 .gl{position:fixed;top:0;left:0;width:100%;height:100lvh;z-index:0;pointer-events:none;display:block}
 main{position:relative;z-index:1}
+/* in-page links stop short of the nav bar, so a section's label is not under its backing (js/site.js passes this to Lenis) */
+main section[id]{scroll-margin-top:40px}
 
 /* type */
 .eyebrow{font-size:.8125rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:400}
@@ -50,7 +53,8 @@ button.btn{font-family:inherit}
 /* split text */
 .w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
 .wi{display:inline-block;transform:translateY(112%);will-change:transform}
-.reveal-line{opacity:0;transform:translateY(24px)}
+/* hidden for the reveal only once js/site.js runs (js-on): until then the text paints under the loader */
+html.js-on .reveal-line{opacity:0;transform:translateY(24px)}
 html.no-js .reveal-line,html.no-js .wi,html.no-js .arrive-copy,
 html.js-failed .reveal-line,html.js-failed .wi,html.js-failed .arrive-copy{opacity:1;transform:none}
 html.no-js .loader,html.js-failed .loader{display:none}
@@ -68,6 +72,13 @@ html.no-motion .reveal-line,html.no-motion .wi,html.no-motion .arrive-copy{opaci
 /* nav */
 .nav{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px var(--gutter) 40px;color:var(--ink);background:linear-gradient(to bottom,rgba(11,11,12,.88),rgba(11,11,12,.55) 45%,rgba(11,11,12,0));pointer-events:none}
 .nav > *{pointer-events:auto}
+/* solid backing once the bar sits over content, so its text never collides with the page text (site.js sets is-solid) */
+.nav::before{content:"";position:absolute;inset:0 0 20px;z-index:-1;background:rgba(11,11,12,.84);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);opacity:0;transition:opacity .35s}
+.nav.is-solid::before{opacity:1;pointer-events:auto}
+/* keyboard focus brings a retracted bar back; !important beats the inline transform GSAP sets */
+.nav:has(:focus-visible){transform:none!important}
+/* static fallback: no script to retract the bar, so it scrolls away with the page */
+html.no-js .nav,html.js-failed .nav{position:absolute}
 .nav-name{font-size:1rem;font-weight:500;letter-spacing:-.01em}
 .nav-links{display:flex;gap:28px;font-size:.875rem;color:var(--ink)}
 .nav-links a{position:relative}
@@ -99,12 +110,14 @@ html.no-motion .reveal-line,html.no-motion .wi,html.no-motion .arrive-copy{opaci
 
 /* photo figures: the shader draws the same shape when WebGL is on */
 .gl-fig{position:relative;overflow:hidden;background:#141416}
+.gl-fig picture{display:contents}
 .gl-fig img{width:100%;height:100%;object-fit:cover;transition:opacity .3s}
 .gl-fig[data-shape="arch"]{border-radius:50% 50% 10px 10px / 40% 40% 10px 10px}
 .gl-fig[data-shape="rect"]{border-radius:18px}
 .gl-fig[data-shape="round"]{border-radius:50%}
-html.gl-planes .gl-fig{background:transparent;border-radius:0}
-html.gl-planes .gl-fig img{opacity:0}
+/* not on the static page: if the script boots late on top of it, the photos stay put */
+html.gl-planes:not(.js-failed) .gl-fig{background:transparent;border-radius:0}
+html.gl-planes:not(.js-failed) .gl-fig img{opacity:0}
 html.gl-planes .gl-fig.gl-off{background:#141416}
 html.gl-planes .gl-fig.gl-off img{opacity:1}
 html.gl-planes .gl-fig.gl-off[data-shape="arch"]{border-radius:50% 50% 10px 10px / 40% 40% 10px 10px}
@@ -133,6 +146,9 @@ html.gl-planes .gl-fig.gl-off[data-shape="round"]{border-radius:50%}
 .marquee-track span{font-family:var(--serif);font-style:italic;font-weight:300;font-variation-settings:'opsz' 144;font-size:clamp(1.5rem,3.2vw,2.875rem);line-height:1;padding-right:1.2em;color:var(--ink)}
 .marquee-track span::after{content:"·";color:var(--accent);padding-left:1.2em}
 @keyframes marquee{to{transform:translateX(-50%)}}
+/* static fallback: the Pause button needs the script, so the strip stands still and the button goes */
+html.no-js .marquee-track,html.js-failed .marquee-track{animation:none}
+html.no-js .marquee-toggle,html.js-failed .marquee-toggle{display:none}
 
 /* about */
 .about{padding-block:clamp(64px,9vh,132px)}
@@ -152,6 +168,7 @@ html.gl-planes .gl-fig.gl-off[data-shape="round"]{border-radius:50%}
 .offer-fig{aspect-ratio:3/4;width:100%}
 .offer-body{display:grid;gap:14px;max-width:36em}
 .offer-body p:not(.eyebrow){color:var(--body);font-size:clamp(1.0625rem,1.15vw,1.1875rem)}
+.offer-body .link{justify-self:start}
 @media (max-width:1280px){.work-grid{grid-template-columns:1fr;gap:clamp(32px,5vh,56px)}.offer-b{margin-top:0}.offer{grid-template-columns:clamp(160px,22vw,240px) minmax(0,1fr)}}
 @media (max-width:560px){.offer{grid-template-columns:1fr}.offer-fig{width:min(100%,240px);aspect-ratio:4/5}}
 
@@ -183,7 +200,6 @@ html.gl-planes .gl-fig.gl-off[data-shape="round"]{border-radius:50%}
 .portrait-fig{width:clamp(96px,9vw,132px);aspect-ratio:1/1;flex:none}
 .signoff-text{font-size:1rem;color:var(--body)}
 .contact-sub{color:var(--body);max-width:30em;font-size:clamp(1.125rem,1.3vw,1.3125rem)}
-.quiet{color:var(--muted);font-size:.9375rem;margin-top:4px;max-width:26em}
 .form{display:grid;gap:26px;align-content:start;justify-items:start;max-width:620px}
 .form .field{width:100%}
 .form .btn{min-width:260px}
@@ -191,20 +207,22 @@ html.gl-planes .gl-fig.gl-off[data-shape="round"]{border-radius:50%}
 .field label{font-size:.8125rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
 .field input,.field textarea{width:100%;background:transparent;border:0;border-bottom:1px solid rgba(237,232,223,.45);border-radius:0;color:var(--ink);font:inherit;font-size:1.125rem;padding:10px 0;transition:border-color .4s;resize:none}
 .field input:focus,.field textarea:focus{outline:none;border-bottom-width:2px;border-color:var(--accent)}
-.field [aria-invalid="true"]{border-color:var(--accent)}
-.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
-.form.is-sending{opacity:.6;pointer-events:none}
-.form-note.is-error{color:#F0866B}
+.field [aria-invalid="true"],.field [aria-invalid="true"]:focus{border-color:var(--error)}
+.hp{display:none}
+/* dim the children: the reveal leaves an inline opacity on the form itself */
+.form.is-sending{pointer-events:none}
+.form.is-sending > *{opacity:.6}
+.form-note.is-error{color:var(--error)}
 .form-note{font-size:.9375rem;color:var(--accent);min-height:1.5em;justify-self:stretch}
 @media (max-width:840px){.contact-grid{grid-template-columns:1fr}}
 
 /* footer */
 .foot{border-top:1px solid var(--line);padding-block:28px 40px;font-size:.875rem;color:var(--muted)}
 .foot-in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-@media (hover:hover){.foot a:hover{color:var(--ink)}}
 
 @media (prefers-reduced-motion:reduce){
   .marquee-track{animation:none}
+  .marquee-toggle{display:none}
   .scroll-hint i::after{animation:none}
-  .btn,.link::after{transition:none}
+  .btn,.link::after,.nav::before{transition:none}
 }

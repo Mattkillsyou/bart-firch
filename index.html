@@ -3,10 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bart Firch</title>
-<meta name="description" content="Full-spectrum health coaching and private yoga with Bart Firch in San Jose, California. I don't sell workouts. I teach people how to become stronger, more capable, and harder to break.">
+<script>
+/* Loader first: a browser that can run js/site.js (it needs import maps) drops the static fallback before the
+   first paint, so a first visit sees the loader instead of the finished page with the loader dropping over it.
+   jsFailed() brings the static page back: at once when a script fails to load, after 9 s if the intro never starts. */
+function jsFailed() {
+  if (window.__booted) return;
+  document.documentElement.classList.add('js-failed');
+  if (window.__lenis) window.__lenis.start(); // js/site.js may have locked scrolling for the intro
+}
+if (window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap')) document.documentElement.classList.remove('no-js');
+setTimeout(jsFailed, 9000);
+</script>
+<title>Bart Firch | Health Coaching &amp; Private Yoga, San Jose</title>
+<meta name="description" content="Full-spectrum health coaching and private yoga in San Jose, California. I teach people how to become stronger, more capable, and harder to break.">
 <meta name="theme-color" content="#0B0B0C">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2716%27 fill=%27%230B0B0C%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%275%27 fill=%27%23E0A25A%27/%3E%3C/svg%3E">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:site_name" content="Bart Firch">
 <meta property="og:title" content="Bart Firch">
 <meta property="og:description" content="A body that can keep showing up for your life. Health coaching and private yoga.">
 <meta property="og:image" content="https://bartonfirch.com/img/bart-10.jpg">
@@ -22,20 +36,51 @@
 <link rel="stylesheet" href="css/site.css">
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.js",
+  "three": "https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.min.js",
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/"
 } }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
+<!-- The whole module graph of js/site.js, fetched in parallel instead of three round trips deep.
+     ponytail: no SRI on these modules. Import-map integrity that a preload does not repeat made Chrome
+     download every module twice (tested 13 Nov 2026); add both together if the CDN ever becomes a concern. -->
+<link rel="modulepreload" href="js/site.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.module.min.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/build/three.core.min.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/postprocessing/EffectComposer.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/postprocessing/RenderPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/postprocessing/ShaderPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/postprocessing/OutputPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/postprocessing/MaskPass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/postprocessing/Pass.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/shaders/CopyShader.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.172.0/examples/jsm/shaders/OutputShader.js">
+<!-- defer: the scripts run in this order after parsing, before js/site.js. integrity pins the exact files: recompute after a version bump -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js" integrity="sha384-pEQB1h4Zmn9xhS6jotzltHSIQq6N0Oh3BXkCNOH5LKI81R2NRbb9efarAJYw9gTY" crossorigin="anonymous" onerror="jsFailed()"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js" integrity="sha384-TgZ1GoXcDnrw/czNfaiSZSFV1zgIRv8aQOevBA8ppS4SkNONmzYfjARpXsDfdnUE" crossorigin="anonymous" onerror="jsFailed()"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js" integrity="sha384-eD5ubmuCcvTdCADWuSchJYE7wcj2nzNr0itbrh6w/KJyBiltSZ8w3VFRBSWu5YQ8" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+[
+  { "@context": "https://schema.org", "@type": "WebSite", "name": "Bart Firch", "url": "https://bartonfirch.com/" },
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Bart Firch",
+    "url": "https://bartonfirch.com/",
+    "image": "https://bartonfirch.com/img/bart-10.jpg",
+    "description": "Full-spectrum health coaching and private yoga in San Jose, California.",
+    "jobTitle": "Health coach and private yoga teacher",
+    "knowsAbout": ["Personal training", "Yoga", "Kinesiology", "Anatomy", "Physical education", "Corporate fitness", "Injury prevention", "Running", "Athletics"],
+    "workLocation": { "@type": "Place", "address": { "@type": "PostalAddress", "addressLocality": "San Jose", "addressRegion": "California" } }
+  }
+]
+</script>
 </head>
 <body>
 
 <a class="skip" href="#hero">Skip to content</a>
 
 <div class="loader" id="loader" aria-hidden="true">
-  <div class="loader-name"><span>Bart</span><span>Firch</span></div>
+  <div class="loader-name"><span>Bart</span> <span>Firch</span></div>
   <div class="loader-count"><span id="loader-num">00</span></div>
   <div class="loader-line"><i id="loader-bar"></i></div>
 </div>
@@ -72,7 +117,9 @@
         </div>
       </div>
       <figure class="gl-fig hero-fig" data-gl data-shape="arch" data-focus="0.5 0.32">
-        <img style="object-position:50% 32%" src="img/bart-23.jpg" alt="Bart Firch outdoors at golden hour" width="1334" height="2000" loading="eager" fetchpriority="high" decoding="async">
+        <!-- lazy on purpose: this figure is hidden below 981px, and a lazy image that is not displayed is never fetched.
+             No preload for it: Safari fetches a preloaded lazy image twice. The JPEGs are for browsers without WebP. -->
+        <picture><source type="image/webp" srcset="img/bart-23.webp"><img style="object-position:50% 32%" src="img/bart-23.jpg" alt="Bart Firch outdoors at golden hour" width="900" height="1349" loading="lazy" fetchpriority="high" decoding="async"></picture>
       </figure>
     </div>
     <div class="scroll-hint reveal-line" aria-hidden="true"><span>Scroll</span><i></i></div>
@@ -80,7 +127,7 @@
 
   <section class="arrive" id="arrive">
     <figure class="gl-fig arrive-fig" data-gl data-shape="none" data-focus="0.46 0.4">
-      <img style="object-position:46% 40%" src="img/bart-10.jpg" alt="Bart with arms crossed against a blue sky" width="2000" height="1334" loading="eager" decoding="async">
+      <picture><source type="image/webp" srcset="img/bart-10.webp"><img style="object-position:46% 40%" src="img/bart-10.jpg" alt="Bart with arms crossed against a blue sky" width="2000" height="1334" loading="eager" decoding="async"></picture>
     </figure>
     <div class="arrive-shade" aria-hidden="true"></div>
     <div class="arrive-copy wrap">
@@ -89,9 +136,9 @@
     </div>
   </section>
 
-  <section class="strip" aria-label="Disciplines">
+  <section class="strip">
     <div class="marquee-wrap">
-      <button class="marquee-toggle" type="button" aria-pressed="false">Pause</button>
+      <button class="marquee-toggle" type="button">Pause</button>
       <div class="marquee" aria-hidden="true">
         <div class="marquee-track">
           <span>Personal training</span><span>Yoga</span><span>Kinesiology</span><span>Anatomy</span><span>Physical education</span><span>Corporate fitness</span><span>Injury prevention</span><span>Running</span><span>Athletics</span>
@@ -111,7 +158,7 @@
         <p class="about-pull" data-split>Your body is your responsibility. <em>Helping you master it is mine.</em></p>
       </div>
       <figure class="gl-fig about-fig" data-gl data-shape="arch" data-focus="0.5 0.8">
-        <img style="object-position:50% 80%" src="img/bart-ready.jpg" alt="Bart in an athletic ready stance on a gravel path at sunset" width="1003" height="1568" loading="lazy" decoding="async">
+        <picture><source type="image/webp" srcset="img/bart-ready.webp"><img style="object-position:50% 80%" src="img/bart-ready.jpg" alt="Bart in an athletic ready stance on a gravel path at sunset" width="1003" height="1568" loading="lazy" decoding="async"></picture>
       </figure>
     </div>
   </section>
@@ -125,7 +172,7 @@
       <div class="work-grid">
         <article class="offer">
           <figure class="gl-fig offer-fig" data-gl data-shape="rect" data-focus="0.45 0.5">
-            <img style="object-position:45% 50%" src="img/bart-river.jpg" alt="Bart leaping between rocks across a mountain river" width="800" height="713" loading="lazy" decoding="async">
+            <picture><source type="image/webp" srcset="img/bart-river.webp"><img style="object-position:45% 50%" src="img/bart-river.jpg" alt="Bart leaping between rocks across a mountain river" width="800" height="713" loading="lazy" decoding="async"></picture>
           </figure>
           <div class="offer-body">
             <p class="eyebrow reveal-line">01</p>
@@ -137,7 +184,7 @@
         </article>
         <article class="offer offer-b">
           <figure class="gl-fig offer-fig" data-gl data-shape="rect" data-focus="0.87 0.5">
-            <img style="object-position:87% 50%" src="img/bart-dancer.jpg" alt="Bart in dancer's pose, balanced on a concrete rail" width="900" height="931" loading="lazy" decoding="async">
+            <picture><source type="image/webp" srcset="img/bart-dancer.webp"><img style="object-position:87% 50%" src="img/bart-dancer.jpg" alt="Bart in dancer's pose, balanced on a concrete rail" width="900" height="931" loading="lazy" decoding="async"></picture>
           </figure>
           <div class="offer-body">
             <p class="eyebrow reveal-line">02</p>
@@ -170,7 +217,7 @@
     <div class="wrap exp-grid">
       <p class="exp-line" data-split>Nearly twenty years across personal training, yoga, kinesiology, anatomy, physical education, corporate fitness, injury prevention, running, and athletics.</p>
       <figure class="gl-fig exp-fig" data-gl data-shape="arch" data-focus="0.5 0">
-        <img style="object-position:50% 0%" src="img/bart-trail.jpg" alt="Bart walking a dirt trail under a blue sky" width="960" height="1322" loading="lazy" decoding="async">
+        <picture><source type="image/webp" srcset="img/bart-trail.webp"><img style="object-position:50% 0%" src="img/bart-trail.jpg" alt="Bart walking a dirt trail under a blue sky" width="960" height="1322" loading="lazy" decoding="async"></picture>
       </figure>
     </div>
   </section>
@@ -183,17 +230,23 @@
         <p class="contact-sub reveal-line">Tell me what you're working toward, what's holding you back, and what you want your body to be capable of. I'll personally review your inquiry, and we'll start with a conversation.</p>
         <div class="signoff reveal-line">
           <figure class="gl-fig portrait-fig" data-gl data-shape="round" data-focus="0.5 0.45">
-            <img style="object-position:50% 45%" src="img/bart-portrait.jpg" alt="Bart Firch" width="512" height="512" loading="lazy" decoding="async">
+            <picture><source type="image/webp" srcset="img/bart-portrait.webp"><img style="object-position:50% 45%" src="img/bart-portrait.jpg" alt="Bart Firch" width="288" height="288" loading="lazy" decoding="async"></picture>
           </figure>
-          <p class="signoff-text">Bart Firch<span class="dot"></span>Every inquiry comes to me.</p>
+          <p class="signoff-text">Bart Firch <span class="dot"></span> Every inquiry comes to me.</p>
         </div>
       </div>
-      <!-- Delivery is configured in js/site.js: set FORM.endpoint and FORM.fallbackEmail. -->
-      <form class="form reveal-line" id="form" novalidate>
+      <!-- Delivery: with the script running, js/site.js sends this form as JSON (see FORM there).
+           If the script never runs, the form posts itself to the same service.
+           The access key and the sender name are in both files on purpose: change them in both places.
+           botcheck is the honeypot: a hidden checkbox, because browser autofill can fill a hidden text field. -->
+      <form class="form reveal-line" id="form" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="07ae0616-2fcd-4869-8586-c0c850a5a5fb">
+        <input type="hidden" name="subject" value="Consultation request from the website">
+        <input type="hidden" name="from_name" value="Bart Firch website">
+        <input class="hp" type="checkbox" name="botcheck">
         <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" type="text" autocomplete="name" required></div>
-        <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
+        <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="An email address with a domain, like name@example.com"></div>
         <div class="field"><label for="f-msg">What's going on?</label><textarea id="f-msg" name="message" rows="3" required></textarea></div>
-        <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
         <button class="btn" type="submit" id="form-submit" data-magnetic>Request a consultation</button>
         <p class="form-note" id="form-note" role="status"></p>
       </form>
@@ -209,7 +262,6 @@
 
 </main>
 
-<script type="module" src="js/site.js"></script>
-<script>setTimeout(function(){ if(!window.__booted) document.documentElement.classList.add('js-failed'); }, 9000);</script>
+<script type="module" src="js/site.js" onerror="jsFailed()"></script>
 </body>
 </html>
