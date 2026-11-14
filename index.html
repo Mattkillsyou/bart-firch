@@ -14,8 +14,13 @@ function jsFailed() {
   document.documentElement.classList.add('js-failed');
   if (window.__lenis) window.__lenis.start(); // js/site.js may have locked scrolling for the intro
 }
-if (window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap')) document.documentElement.classList.remove('no-js');
-setTimeout(jsFailed, 9000);
+if (window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap')) {
+  document.documentElement.classList.remove('no-js');
+  /* a repeat view in the same tab skips the loader; a saved "Pause motion" choice applies from the first frame */
+  try { if (sessionStorage.getItem('bf-seen')) document.documentElement.classList.add('seen'); } catch (e) {}
+  try { if (localStorage.getItem('bf-motion') === 'paused') document.documentElement.classList.add('motion-paused'); } catch (e) {}
+}
+setTimeout(jsFailed, 4000); // a boot that has not finished by 4 s leaves the static page up (site.js then upgrades it quietly)
 </script>
 <title>Bart Firch | Health Coaching &amp; Private Yoga, San Jose</title>
 <meta name="description" content="Full-spectrum health coaching and private yoga in San Jose, California. I teach people how to become stronger, more capable, and harder to break.">
@@ -83,8 +88,6 @@ setTimeout(jsFailed, 9000);
 
 <div class="loader" id="loader" aria-hidden="true">
   <div class="loader-name"><span>Bart</span> <span>Firch</span></div>
-  <div class="loader-count"><span id="loader-num">00</span></div>
-  <div class="loader-line"><i id="loader-bar"></i></div>
 </div>
 
 <canvas class="gl" id="gl" aria-hidden="true"></canvas>
@@ -124,7 +127,6 @@ setTimeout(jsFailed, 9000);
         <picture><source type="image/webp" srcset="img/bart-23.webp"><img style="object-position:50% 32%" src="img/bart-23.jpg" alt="Bart Firch outdoors at golden hour" width="900" height="1349" loading="lazy" fetchpriority="high" decoding="async"></picture>
       </figure>
     </div>
-    <div class="scroll-hint reveal-line" aria-hidden="true"><span>Scroll</span><i></i></div>
   </section>
 
   <section class="arrive" id="arrive">
@@ -139,7 +141,7 @@ setTimeout(jsFailed, 9000);
 
   <section class="strip">
     <div class="marquee-wrap">
-      <button class="marquee-toggle" type="button">Pause</button>
+      <button class="marquee-toggle" type="button" id="motion-toggle">Pause motion</button>
       <div class="marquee" aria-hidden="true">
         <div class="marquee-track">
           <span>Personal training</span><span>Yoga</span><span>Kinesiology</span><span>Anatomy</span><span>Physical education</span><span>Corporate fitness</span><span>Injury prevention</span><span>Running</span><span>Athletics</span>
@@ -249,7 +251,7 @@ setTimeout(jsFailed, 9000);
         <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" type="text" autocomplete="name" required aria-describedby="e-f-name"><p class="field-error" id="e-f-name" hidden></p></div>
         <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="An email address with a domain, like name@example.com" aria-describedby="e-f-email"><p class="field-error" id="e-f-email" hidden></p></div>
         <div class="field"><label for="f-msg">What’s going on?</label><textarea id="f-msg" name="message" rows="5" required aria-describedby="e-f-msg"></textarea><p class="field-error" id="e-f-msg" hidden></p></div>
-        <button class="btn" type="submit" id="form-submit" data-magnetic>Request a consultation</button>
+        <button class="btn" type="submit" id="form-submit">Request a consultation</button>
         <p class="form-note" id="form-note" role="status"></p>
         <button class="link form-again" type="button" id="form-again" hidden>Wrong address? Fix it</button>
       </form>

@@ -14,7 +14,9 @@ gsap.registerPlugin(ScrollTrigger);
 ScrollTrigger.config({ ignoreMobileResize: true });
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const touch = window.matchMedia('(pointer: coarse)').matches;
+/* any touchscreen counts: a touch laptop scrolls natively by finger, where WebGL photo planes would trail a frame */
+const touch = window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(any-pointer: coarse)').matches;
+const seen = html.classList.contains('seen'); // a repeat view in this tab (set in index.html): no loader, a quicker intro
 const fine = window.matchMedia('(pointer: fine)').matches;
 /* Software renderers (no GPU, virtual desktop, blocked driver) get the DOM photos instead of a scene at 2 frames
    per second. The flag catches Chromium's own fallback; the renderer name also catches Firefox and forced headless runs.
@@ -59,11 +61,16 @@ let lenis = null;
 let scrollVel = 0;
 if (!reduced && window.Lenis) {
   lenis = window.__lenis = new window.Lenis({ lerp: 0.085, smoothWheel: true, syncTouch: false, wheelMultiplier: 0.95 });
-  lenis.on('scroll', (e) => { scrollVel = e.velocity; ScrollTrigger.update(); });
+  lenis.on('scroll', (e) => {
+    scrollVel = e.velocity;
+    ScrollTrigger.update();
+    /* the browser scrolling on its own (keyboard, scrollbar, touch): the page photos stand in for the planes (css gl-native) */
+    const native = e.isScrolling === 'native' && GL.planes.length > 0;
+    if (native !== GL.native) { GL.native = native; html.classList.toggle('gl-native', native); }
+  });
   gsap.ticker.add((t) => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
-  /* scrolling stays locked under the intro, unless the static page is already showing (jsFailed in index.html) */
-  if (!html.classList.contains('js-failed')) lenis.stop();
+  /* no scroll lock under the loader: it is short now, and a lock is one more thing a failed boot could leave behind */
 }
 const focusTarget = (target) => {
   if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
@@ -77,33 +84,34 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
     if (!target) return;
     e.preventDefault();
     /* Lenis ignores scroll-margin-top (css: it keeps section labels clear of the nav bar), so pass it as the offset */
-    if (lenis) lenis.scrollTo(target, { offset: -(parseFloat(getComputedStyle(target).scrollMarginTop) || 0), duration: 1.6, easing: (t) => 1 - Math.pow(1 - t, 4), onComplete: () => focusTarget(target) });
-    else { target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }); focusTarget(target); }
+    const offset = -(parseFloat(getComputedStyle(target).scrollMarginTop) || 0);
+    const far = Math.abs(target.getBoundingClientRect().top) > innerHeight * 1.5;
+    if (lenis && far) {
+      /* a long way off: a quick fade and a cut instead of a ride across the whole page (it went 4,400px in 1.4 s) */
+      const main = document.querySelector('main');
+      gsap.timeline()
+        .to(main, { opacity: 0, duration: 0.22, ease: 'power2.in' })
+        .add(() => { lenis.scrollTo(target, { offset, immediate: true, force: true }); GL.vel = 0; ScrollTrigger.update(); focusTarget(target); })
+        .to(main, { opacity: 1, duration: 0.45, ease: 'power2.out', clearProps: 'opacity' });
+    } else if (lenis) {
+      lenis.scrollTo(target, { offset, duration: 1.0, easing: (t) => 0.5 - 0.5 * Math.cos(Math.PI * t), onComplete: () => focusTarget(target) });
+    } else { target.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }); focusTarget(target); }
   });
 });
 
-/* ---------- loader ---------- */
+/* ---------- loader: the wordmark alone, for as long as real loading takes ---------- */
 const loader = document.getElementById('loader');
-const loaderNum = document.getElementById('loader-num');
-const loaderBar = document.getElementById('loader-bar');
-const loadState = { p: 0, shown: 0 };
-function setProgress(p) {
-  loadState.p = Math.max(loadState.p, p);
-  gsap.to(loadState, { shown: loadState.p, duration: 0.6, ease: 'power2.out', overwrite: true, onUpdate: () => {
-    const n = Math.round(loadState.shown * 100);
-    loaderNum.textContent = String(n).padStart(2, '0');
-    loaderBar.style.width = (loadState.shown * 100) + '%';
-  } });
-}
 
 /* ---------- WebGL ---------- */
 const canvas = document.getElementById('gl');
-const GL = { planes: [], fade: 1, fadeTarget: 1, mouse: new THREE.Vector2(0, 0), mouseT: new THREE.Vector2(0, 0), vel: 0 };
+/* fade starts at 0, so the dust fades in once the page shows; time stops while "Pause motion" is on */
+const GL = { planes: [], fade: 0, fadeTarget: 1, mouse: new THREE.Vector2(0, 0), mouseT: new THREE.Vector2(0, 0), vel: 0, time: 0, paused: html.classList.contains('motion-paused'), native: false };
 const W = () => canvas.clientWidth || html.clientWidth;
 const H = () => canvas.clientHeight || window.innerHeight;
 function pickRatio(w, h) {
   const dpr = window.devicePixelRatio || 1;
-  return Math.max(1, Math.min(dpr, 2, Math.sqrt(4.5e6 / Math.max(1, w * h))));
+  /* touch screens draw at 1.5x at most: the soft dust and grain look the same, with 44% fewer pixels per pass */
+  return Math.max(1, Math.min(dpr, touch ? 1.5 : 2, Math.sqrt(4.5e6 / Math.max(1, w * h))));
 }
 
 const noiseGLSL = `
@@ -137,6 +145,7 @@ attribute vec3 aSeed;
 attribute float aSize;
 uniform float uTime, uBreath, uFade, uPixelRatio, uVel;
 uniform vec2 uMouse, uArea;
+uniform vec4 uQuiet; // the text block on screen (left, bottom, right, top, from the centre, y up): dust thins out over it
 varying float vAlpha;
 void main(){
   vec3 p;
@@ -154,13 +163,17 @@ void main(){
   vec2 d = p.xy - uMouse;
   float dist = length(d);
   float f = smoothstep(300.0, 0.0, dist);
-  p.xy += (d / max(dist, 1.0)) * f * 140.0;
+  p.xy += (d / max(dist, 1.0)) * f * 60.0;
   p.y += uVel * (0.35 + aSeed.z) * 2.2 + sin(uTime * 0.25 + aSeed.x * 6.2832) * 18.0;
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * mv;
   float depth = smoothstep(-450.0, 350.0, p.z);
   gl_PointSize = min(aSize * uPixelRatio * (900.0 / -mv.z), 48.0);
   vAlpha = (0.12 + 0.7 * depth) * uFade * (0.5 + 0.5 * n.x) * (1.0 - f * 0.5) * 0.85;
+  /* quiet zone: 20% strength inside the text block, back to full over 140px outside it, so there is no edge */
+  vec2 sp = gl_Position.xy / gl_Position.w * 0.5 * uArea;
+  vec2 dq = max(max(uQuiet.xy - sp, sp - uQuiet.zw), 0.0);
+  vAlpha *= mix(0.2, 1.0, smoothstep(0.0, 140.0, length(dq)));
 }`;
 const particleFrag = `
 uniform vec3 uColor;
@@ -185,7 +198,7 @@ void main(){
 const planeFrag = `
 uniform sampler2D uTex;
 uniform vec2 uPlane, uImage, uFocus;
-uniform float uVel, uReveal, uWarm, uOpacity, uTopR, uBotR, uPx;
+uniform float uVel, uReveal, uOpacity, uTopR, uBotR, uPx;
 varying vec2 vUv;
 vec2 cover(vec2 uv, vec2 plane, vec2 img){
   float pr = plane.x / plane.y; float ir = img.x / img.y;
@@ -203,9 +216,7 @@ void main(){
   float r = texture2D(uTex, cuv + vec2(0.0, sp)).r;
   float g = texture2D(uTex, cuv).g;
   float b = texture2D(uTex, cuv - vec2(0.0, sp)).b;
-  vec3 col = vec3(r, g, b);
-  col = mix(col, col * vec3(1.03, 1.0, 0.94), uWarm);
-  col = pow(col, vec3(1.06));
+  vec3 col = vec3(r, g, b); // no extra grade here: laptops and phones show the photos the same
   float e = uReveal * 1.12;
   float wipe = 1.0 - smoothstep(e - 0.12, e, 1.0 - vUv.y);
   /* mask: rounded box whose top and bottom corners can differ (arch = top radius of half the width) */
@@ -222,20 +233,24 @@ void main(){
 
 /* grain runs after OutputPass, so it works in display (sRGB) space */
 const grainShader = {
-  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uAmount: { value: 0.07 }, uRes: { value: new THREE.Vector2(1, 1) }, uGlow: { value: 1 } },
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uAmount: { value: 0.05 }, uRes: { value: new THREE.Vector2(1, 1) }, uGlow: { value: 1 } },
   vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: `
   uniform sampler2D tDiffuse; uniform float uTime, uAmount, uGlow; uniform vec2 uRes; varying vec2 vUv;
   float hash(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
   void main(){
     vec4 c = texture2D(tDiffuse, vUv);
-    float g = (hash(vUv * uRes + vec2(fract(uTime * 13.7) * 100.0, fract(uTime * 7.3) * 100.0)) - 0.5) * uAmount;
+    /* film grain: a new pattern 24 times a second, strongest in the mid-tones, so the black behind the words stays black */
+    float ft = floor(uTime * 24.0);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+    float g = (hash(vUv * uRes + vec2(fract(ft * 0.137) * 100.0, fract(ft * 0.073) * 100.0)) - 0.5) * uAmount * (0.35 + 2.6 * lum * (1.0 - lum));
     vec2 q = vUv - 0.5;
-    float vig = 1.0 - dot(q, q) * 0.45;
-    float ar = uRes.x / uRes.y;
+    float vig = 1.0 - dot(q, q) * 0.28;
+    /* the warm light is measured from the screen's short side, so it stays a patch on tall phone screens */
+    vec2 sc = uRes / min(uRes.x, uRes.y);
     vec2 gp = vec2(0.18 + 0.06 * sin(uTime * 0.11), 0.22 + 0.05 * cos(uTime * 0.09));
-    float glow = smoothstep(0.85, 0.0, distance(vec2(vUv.x * ar, vUv.y), vec2(gp.x * ar, gp.y)));
-    c.rgb = c.rgb * vig + vec3(0.29, 0.22, 0.13) * glow * uGlow * 0.5 + g;
+    float glow = smoothstep(0.7, 0.0, distance(vUv * sc, gp * sc));
+    c.rgb = c.rgb * vig + vec3(0.29, 0.22, 0.13) * glow * uGlow * 0.22 + g;
     gl_FragColor = vec4(clamp(c.rgb, 0.0, 1.0), 1.0);
   }`,
 };
@@ -244,7 +259,8 @@ let renderer, scene, camera, composer, grainPass, particles, pMat, clock;
 let lastW = 0, lastH = 0;
 
 function initGL(manager) {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+  /* default power preference: the integrated GPU handles this easily, and dual-GPU laptops stay cool */
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
   renderer.setPixelRatio(pickRatio(W(), H()));
   renderer.setSize(W(), H(), false);
   renderer.setClearColor(new THREE.Color('#0B0B0C'), 1);
@@ -264,12 +280,13 @@ function initGL(manager) {
   composer.addPass(grainPass);
 
   /* particles */
-  const N = touch ? 2200 : 6500;
+  /* phones: fewer and smaller specks, so none is bigger than a letter */
+  const N = touch ? 1200 : 6500;
   const geo = new THREE.BufferGeometry();
   const pos = new Float32Array(N * 3), seed = new Float32Array(N * 3), size = new Float32Array(N);
   for (let i = 0; i < N; i++) {
     seed[i * 3] = Math.random(); seed[i * 3 + 1] = Math.random(); seed[i * 3 + 2] = Math.random();
-    size[i] = 1.6 + Math.pow(Math.random(), 2.2) * 6.5;
+    size[i] = touch ? 1.2 + Math.pow(Math.random(), 2.2) * 3.8 : 1.6 + Math.pow(Math.random(), 2.2) * 6.5;
   }
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('aSeed', new THREE.BufferAttribute(seed, 3));
@@ -279,6 +296,7 @@ function initGL(manager) {
     uniforms: {
       uTime: { value: 0 }, uBreath: { value: 1 }, uFade: { value: 0 }, uPixelRatio: { value: renderer.getPixelRatio() }, uVel: { value: 0 },
       uMouse: { value: new THREE.Vector2(9999, 9999) }, uArea: { value: new THREE.Vector2(W(), H()) }, uColor: { value: new THREE.Color('#E6C69A') },
+      uQuiet: { value: new THREE.Vector4(1e5, 1e5, -1e5, -1e5) },
     },
   });
   particles = new THREE.Points(geo, pMat);
@@ -303,7 +321,7 @@ function initGL(manager) {
           uTex: { value: tex }, uPlane: { value: new THREE.Vector2(1, 1) },
           uImage: { value: new THREE.Vector2(+img.getAttribute('width') || 3, +img.getAttribute('height') || 2) },
           uVel: { value: 0 }, uReveal: { value: 0 },
-          uWarm: { value: 0.6 }, uFocus: { value: new THREE.Vector2(f[0], 1 - f[1]) }, uOpacity: { value: 1 },
+          uFocus: { value: new THREE.Vector2(f[0], 1 - f[1]) }, uOpacity: { value: 1 },
           uTopR: { value: 0 }, uBotR: { value: 0 }, uPx: { value: 1 },
         },
       });
@@ -379,10 +397,13 @@ function onResize() {
 let hidden = false;
 document.addEventListener('visibilitychange', () => { hidden = document.hidden; });
 
+const QUIET = '.hero-copy, .contact-head, .form';
 function render() {
   if (!renderer || hidden) return;
   onResize(); // no-op when the size is unchanged; fixes a renderer sized before the stylesheet applied (Safari runs deferred scripts without waiting for it)
-  const t = clock.getElapsedTime();
+  const dt = clock.getDelta();
+  if (!GL.paused) GL.time += dt; // "Pause motion" stops the clock: dust, breath, glow and grain all hold still
+  const t = GL.time;
   const w = W(), h = H();
   GL.vel += (Math.max(-30, Math.min(30, scrollVel)) - GL.vel) * 0.1;
   GL.mouse.lerp(GL.mouseT, 0.08);
@@ -391,12 +412,22 @@ function render() {
   pMat.uniforms.uTime.value = t;
   pMat.uniforms.uBreath.value = 1 + Math.sin(t * Math.PI * 2 / 6.5) * 0.06;
   pMat.uniforms.uFade.value = GL.fade;
-  pMat.uniforms.uVel.value = GL.vel;
-  pMat.uniforms.uMouse.value.copy(GL.mouse);
+  pMat.uniforms.uVel.value = GL.paused ? 0 : GL.vel;
+  if (GL.paused) pMat.uniforms.uMouse.value.set(9999, 9999); else pMat.uniforms.uMouse.value.copy(GL.mouse);
   particles.visible = GL.fade > 0.02;
 
+  /* the dust thins out over the text block on screen (hero copy, contact heading, form) */
+  let ql = 1e9, qt = 1e9, qr = -1e9, qb = -1e9;
+  document.querySelectorAll(QUIET).forEach((el) => {
+    const q = el.getBoundingClientRect();
+    if (q.bottom < 0 || q.top > h || !q.width) return;
+    ql = Math.min(ql, q.left); qt = Math.min(qt, q.top); qr = Math.max(qr, q.right); qb = Math.max(qb, q.bottom);
+  });
+  if (qr > ql) pMat.uniforms.uQuiet.value.set(ql - 24 - w / 2, -(qb + 24 - h / 2), qr + 24 - w / 2, -(qt - 24 - h / 2));
+  else pMat.uniforms.uQuiet.value.set(1e5, 1e5, -1e5, -1e5);
+
   for (const p of GL.planes) {
-    if (p.dead || !p.loaded) { p.mesh.visible = false; continue; }
+    if (p.dead || !p.loaded || GL.native) { p.mesh.visible = false; continue; }
     const r = p.fig.getBoundingClientRect();
     const visible = r.bottom > -100 && r.top < h + 100 && r.width > 0;
     p.mesh.visible = visible;
@@ -418,7 +449,6 @@ function render() {
 /* ---------- boot ---------- */
 const manager = new THREE.LoadingManager();
 let assetsDone = false;
-manager.onProgress = (url, loaded, total) => setProgress(0.15 + 0.85 * (loaded / total));
 manager.onLoad = () => { assetsDone = true; maybeStart(); };
 manager.onError = () => { assetsDone = true; maybeStart(); };
 
@@ -429,40 +459,43 @@ if (useGL) {
   }
 }
 if (!useGL || !GL.planes.some((p) => p.gates)) assetsDone = true;
-setProgress(0.15);
 let fontsDone = false;
 (document.fonts ? document.fonts.ready : Promise.resolve()).then(() => { fontsDone = true; loader.classList.add('fonts-in'); maybeStart(); });
-setTimeout(() => { assetsDone = true; fontsDone = true; maybeStart(); }, 6000);
+setTimeout(() => { assetsDone = true; fontsDone = true; maybeStart(); }, 3000); // never wait past 3 s for fonts or the hero photo
 
 let started = false;
 function maybeStart() {
   if (started || !assetsDone || !fontsDone) return;
   started = true;
-  /* the loader is on screen from the first paint, so its 1.3 s minimum counts from navigation start */
-  const wait = Math.max(0, 1300 - performance.now());
-  setTimeout(start, wait);
+  /* no fixed wait: the wordmark stays only as long as loading takes, with a short floor on desktop so it never just blinks */
+  const hold = touch || reduced || seen ? 0 : 400;
+  setTimeout(start, Math.max(0, hold - performance.now()));
 }
 
 function start() {
-  setProgress(1);
   if (useGL && renderer) gsap.ticker.add(render);
   const hero = document.querySelector('.hero');
   const heroWords = hero.querySelectorAll('.wi');
   const heroLines = hero.querySelectorAll('.reveal-line');
+  const name = loader.querySelector('.loader-name');
+  const quick = seen; // a repeat view: no loader, a shorter rise
   const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-  tl.to(loader, { clipPath: 'inset(0 0 100% 0)', duration: 1.1, ease: 'expo.inOut', delay: 0.35, onComplete: () => { loader.style.display = 'none'; } })
-    .add(() => { if (lenis) lenis.start(); GL.fadeTarget = 1; }, '-=0.5')
-    .to(heroWords, { y: 0, duration: 1.4, stagger: 0.045, onComplete: () => hero.querySelector('.hero-title').classList.add('is-in') }, '-=0.55')
-    .to(heroLines, { opacity: 1, y: 0, duration: 1.2, stagger: 0.1 }, '-=1.0');
+  /* hand-off, no curtain: the wordmark lifts away, the loader fades, the headline rises through it */
+  if (!quick) tl.to(name, { y: -12, opacity: 0, duration: 0.35, ease: 'power2.in' }, 0);
+  tl.to(loader, { opacity: 0, duration: quick ? 0.01 : 0.5, ease: 'power2.out', onComplete: () => { loader.style.display = 'none'; } }, quick ? 0 : 0.05)
+    .add(() => { if (lenis) lenis.start(); GL.fadeTarget = 1; }, 0)
+    .to(heroWords, { y: 0, duration: quick ? 0.6 : 1.0, stagger: quick ? 0.02 : 0.04, onComplete: () => hero.querySelector('.hero-title').classList.add('is-in') }, quick ? 0 : 0.2)
+    .to(heroLines, { opacity: 1, y: 0, duration: quick ? 0.4 : 0.7, stagger: 0.1, ease: 'power3.out' }, quick ? 0.1 : 0.45)
+    .add(() => { try { sessionStorage.setItem('bf-seen', '1'); } catch (e) {} });
   /* skip the intro when it would play over content the visitor already sees (reduced motion, or the static page shown after a slow load) */
   if (reduced || html.classList.contains('js-failed')) tl.progress(1);
   setupScroll();
   setupPointer();
   setupMagnetic();
   setupForm();
-  setupMarquee();
+  setupMotionToggle();
   ScrollTrigger.refresh();
-  window.__booted = true; // last: if anything above throws, the 9 s timer in index.html still brings the static page back
+  window.__booted = true; // last: if anything above throws, the 4 s timer in index.html still brings the static page back
 }
 
 /* ---------- scroll choreography ---------- */
@@ -481,7 +514,7 @@ function setupScroll() {
   let heroFade = 1, closeFade = 0;
   const applyFade = () => { GL.fadeTarget = Math.max(heroFade, closeFade); };
   ScrollTrigger.create({ trigger: '.hero', start: 'top top', end: 'bottom 20%', onUpdate: (st) => { heroFade = 1 - st.progress * 0.9; applyFade(); } });
-  ScrollTrigger.create({ trigger: '.contact', start: 'top 80%', end: 'bottom bottom', onUpdate: (st) => { closeFade = 0.1 + st.progress * 0.55; applyFade(); }, onLeaveBack: () => { closeFade = 0; applyFade(); } });
+  ScrollTrigger.create({ trigger: '.contact', start: 'top 80%', end: 'bottom bottom', onUpdate: (st) => { closeFade = Math.min(0.35, 0.1 + st.progress * 0.55); applyFade(); }, onLeaveBack: () => { closeFade = 0; applyFade(); } });
 
   /* photo reveals: GL planes on desktop, the DOM image elsewhere */
   const heroFigure = document.querySelector('.hero-fig');
@@ -514,18 +547,23 @@ function setupScroll() {
   window.addEventListener('scroll', navSolid, { passive: true });
   navSolid();
 
-  /* nav retracts going down, returns going up; one tween per change of direction */
-  let navDown = false;
-  const navTo = (down) => {
-    if (down === navDown) return;
-    navDown = down;
-    gsap.to(nav, { yPercent: down ? -140 : 0, duration: 0.5, ease: 'power3.out', overwrite: true });
-  };
+  /* nav hides after 24px of scrolling down and comes back only after 160px up, so a small nudge does not flick it
+     over the text. It stays put while it holds focus or while someone types in the form, and the y is clamped
+     to the page, so the iPhone's bounce at either end does not count as scrolling up. */
+  let navShown = true, navMark = 0;
+  const setNav = (v) => { if (v === navShown) return; navShown = v; gsap.to(nav, { yPercent: v ? 0 : -140, duration: 0.35, ease: 'power2.out', overwrite: true }); };
   ScrollTrigger.create({
-    start: 'top -80', end: 99999,
-    onUpdate: (st) => navTo(st.direction === 1),
-    onLeaveBack: () => navTo(false),
+    start: 0, end: 'max',
+    onUpdate: (st) => {
+      const y = Math.min(Math.max(window.scrollY, 0), ScrollTrigger.maxScroll(window));
+      const a = document.activeElement;
+      if (y < 80 || nav.contains(a)) { setNav(true); navMark = y; return; }
+      if (a && a.closest && a.closest('.field')) { navMark = y; return; }
+      if (st.direction === 1) { if (y - navMark > 24) setNav(false); if (!navShown) navMark = y; }
+      else { if (navMark - y > 160) setNav(true); if (navShown) navMark = y; }
+    },
   });
+  nav.addEventListener('focusin', () => setNav(true));
 
   /* text */
   document.querySelectorAll('[data-split]').forEach((el) => {
@@ -547,7 +585,9 @@ function setupScroll() {
 function setupPointer() {
   if (!fine || reduced) return;
   window.addEventListener('pointermove', (e) => {
-    GL.mouseT.set(e.clientX - W() / 2, -(e.clientY - H() / 2));
+    /* no push over the form: specks should not scatter under the fields while someone types */
+    if (e.target.closest && e.target.closest('#form')) GL.mouseT.set(9999, 9999);
+    else GL.mouseT.set(e.clientX - W() / 2, -(e.clientY - H() / 2));
   }, { passive: true });
   document.addEventListener('pointerleave', () => GL.mouseT.set(9999, 9999));
 }
@@ -555,21 +595,29 @@ function setupMagnetic() {
   if (!fine || reduced) return;
   document.querySelectorAll('[data-magnetic]').forEach((el) => {
     const xTo = gsap.quickTo(el, 'x', { duration: 0.6, ease: 'power3' }), yTo = gsap.quickTo(el, 'y', { duration: 0.6, ease: 'power3' });
+    let cx = 0, cy = 0;
+    /* the centre is measured once on entry, and the pull is a few pixels: the button leans, it does not run away */
+    el.addEventListener('pointerenter', () => { const r = el.getBoundingClientRect(); cx = r.left + r.width / 2; cy = r.top + r.height / 2; });
     el.addEventListener('pointermove', (e) => {
-      const r = el.getBoundingClientRect();
-      xTo((e.clientX - (r.left + r.width / 2)) * 0.3); yTo((e.clientY - (r.top + r.height / 2)) * 0.3);
+      xTo(gsap.utils.clamp(-8, 8, (e.clientX - cx) * 0.12)); yTo(gsap.utils.clamp(-4, 4, (e.clientY - cy) * 0.12));
     });
     el.addEventListener('pointerleave', () => { xTo(0); yTo(0); });
   });
 }
 
-/* ---------- marquee pause (keyboard and touch) ---------- */
-function setupMarquee() {
-  const mq = document.querySelector('.marquee'), mt = document.querySelector('.marquee-toggle');
-  if (!mq || !mt) return;
-  /* the label is the one signal of state: it names what the button will do */
+/* ---------- "Pause motion": one switch for all background motion (WCAG 2.2.2), remembered for the next visit ---------- */
+function setupMotionToggle() {
+  const mt = document.getElementById('motion-toggle');
+  if (!mt) return;
+  const apply = (paused) => {
+    GL.paused = paused;
+    html.classList.toggle('motion-paused', paused);
+    mt.textContent = paused ? 'Play motion' : 'Pause motion'; // the label names what the button will do
+  };
+  apply(GL.paused);
   mt.addEventListener('click', () => {
-    mt.textContent = mq.classList.toggle('is-paused') ? 'Play' : 'Pause';
+    apply(!GL.paused);
+    try { localStorage.setItem('bf-motion', GL.paused ? 'paused' : 'on'); } catch (e) {}
   });
 }
 

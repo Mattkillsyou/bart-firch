@@ -46,13 +46,18 @@ main section[id]{scroll-margin-top:40px}
 .h3{font-weight:500;font-size:clamp(1.25rem,1.7vw,1.75rem);line-height:1.15;letter-spacing:-.015em}
 .link{position:relative;display:inline-block;font-weight:400;padding-bottom:4px}
 .link::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;transform-origin:left;transition:transform .6s var(--ease)}
-@media (hover:hover){.link:hover::after{transform:scaleX(0);transform-origin:right}}
+/* hover: the underline sweeps out and back in, so the link never loses its underline */
+@media (hover:hover){.link:hover::after{animation:link-swap .7s var(--ease)}}
+@keyframes link-swap{0%{transform:scaleX(1);transform-origin:right}49%{transform:scaleX(0);transform-origin:right}50%{transform:scaleX(0);transform-origin:left}100%{transform:scaleX(1);transform-origin:left}}
 /* min-height, not height: with a large browser text size the label wraps inside the pill instead of spilling out */
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:12px 28px;line-height:1.25;text-align:center;border-radius:999px;border:1px solid var(--line);background:var(--ink);color:var(--bg);font-weight:500;font-size:.9375rem;letter-spacing:.01em;cursor:pointer;transition:background .4s,color .4s,border-color .4s;will-change:transform}
 @media (hover:hover){.btn:hover{background:var(--accent);border-color:var(--accent);color:#0B0B0C}}
 .btn-sm{min-height:44px;padding:8px 20px;font-size:.875rem;background:transparent;color:var(--ink);border-color:var(--line)}
 @media (hover:hover){.btn-sm:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}}
 button.btn{font-family:inherit}
+/* a press shows, on touch too */
+.btn:active{background:#D6CFC3;border-color:#D6CFC3;transition:none}
+.btn-sm:active{background:rgba(237,232,223,.14);color:var(--ink)}
 
 /* split text */
 /* each word rises inside its own mask; the mask has room for the italic's tails and overhang (cancelled by an equal
@@ -73,20 +78,22 @@ html.no-motion .reveal-line,html.no-motion .wi,html.no-motion .arrive-copy{opaci
 .loader-name{opacity:0;transition:opacity .45s ease;display:flex;gap:.3em;font-size:clamp(1.75rem,4vw,3.5rem);font-weight:300;letter-spacing:-.03em;line-height:1}
 .loader-name span:last-child{font-family:var(--serif);font-style:italic;font-variation-settings:'opsz' 144}
 .loader.fonts-in .loader-name{opacity:1}
-.loader-count{margin-top:16px;font-size:.75rem;letter-spacing:.16em;color:var(--muted);font-variant-numeric:tabular-nums}
-.loader-line{margin-top:12px;height:1px;background:var(--line)}
-.loader-line i{display:block;height:100%;width:0;background:var(--ink)}
+/* no loader on a repeat view in the same tab, nor for Reduce Motion */
+html.seen .loader{display:none}
 
 /* nav */
 .nav{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding:20px var(--gutter) 40px;color:var(--ink);background:linear-gradient(to bottom,rgba(11,11,12,.88),rgba(11,11,12,.55) 45%,rgba(11,11,12,0));pointer-events:none}
 .nav > *{pointer-events:auto}
 /* solid backing once the bar sits over content, so its text never collides with the page text (site.js sets is-solid) */
-.nav::before{content:"";position:absolute;inset:0 0 20px;z-index:-1;background:rgba(11,11,12,.84);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);opacity:0;transition:opacity .35s}
+/* no backdrop blur: on phones it re-blurs the moving canvas every frame */
+.nav::before{content:"";position:absolute;inset:0 0 20px;z-index:-1;background:rgba(11,11,12,.94);border-bottom:1px solid var(--line);opacity:0;transition:opacity .35s}
 .nav.is-solid::before{opacity:1;pointer-events:auto}
 /* keyboard focus brings a retracted bar back; !important beats the inline transform GSAP sets */
 .nav:has(:focus-visible){transform:none!important}
-/* static fallback: no script to retract the bar, so it scrolls away with the page */
+/* static fallback: no script to retract the bar, so it scrolls away with the page; same on very short screens
+   (phones held sideways, 400% zoom), where a fixed bar would cover a third of the view */
 html.no-js .nav,html.js-failed .nav{position:absolute}
+@media (max-height:480px){.nav{position:absolute}}
 .nav-name{font-size:1rem;font-weight:500;letter-spacing:-.01em;white-space:nowrap}
 .nav-links{display:flex;gap:28px;font-size:.875rem;color:var(--ink)}
 .nav-links a{position:relative}
@@ -104,15 +111,9 @@ html.no-js .nav,html.js-failed .nav{position:absolute}
 .hero-sub{max-width:36em;color:var(--body);font-size:clamp(1.125rem,1.3vw,1.375rem)}
 .hero-cta{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
 .hero-fig{width:100%;aspect-ratio:4/5;align-self:end;margin-bottom:6px}
-.scroll-hint{position:absolute;right:calc(var(--gutter) * .35);top:46%;display:flex;flex-direction:column;align-items:center;gap:12px;font-size:.6875rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
-.scroll-hint span{writing-mode:vertical-rl}
-.scroll-hint i{width:1px;height:56px;background:var(--line);position:relative;overflow:hidden}
-.scroll-hint i::after{content:"";position:absolute;left:0;top:-100%;width:100%;height:100%;background:var(--ink);animation:drop 2.2s var(--ease) infinite}
-@keyframes drop{0%{top:-100%}60%{top:100%}100%{top:100%}}
 @media (max-width:980px){
   .hero-in{grid-template-columns:1fr}
   .hero-fig{display:none}
-  .scroll-hint{display:none}
 }
 
 /* photo figures: the shader draws the same shape when WebGL is on */
@@ -130,6 +131,12 @@ html.gl-planes .gl-fig.gl-off img{opacity:1}
 html.gl-planes .gl-fig.gl-off[data-shape="arch"]{border-radius:50% 50% 10px 10px / 40% 40% 10px 10px}
 html.gl-planes .gl-fig.gl-off[data-shape="rect"]{border-radius:18px}
 html.gl-planes .gl-fig.gl-off[data-shape="round"]{border-radius:50%}
+/* while the browser itself scrolls (keyboard, scrollbar, a touchscreen), the WebGL planes would trail by a frame:
+   the page photos stand in until that scroll ends (site.js toggles gl-native) */
+html.gl-native .gl-fig img{opacity:1;transition:none}
+html.gl-native .gl-fig[data-shape="arch"]{border-radius:50% 50% 10px 10px / 40% 40% 10px 10px}
+html.gl-native .gl-fig[data-shape="rect"]{border-radius:18px}
+html.gl-native .gl-fig[data-shape="round"]{border-radius:50%}
 
 /* arrive: one full-bleed frame, no pin, no zoom */
 .arrive{position:relative;height:min(100svh,calc(100vw * .62));min-height:min(62svh,520px,100vw);overflow:hidden}
@@ -148,7 +155,8 @@ html.gl-planes .gl-fig.gl-off[data-shape="round"]{border-radius:50%}
 .marquee-wrap{position:relative}
 .marquee-toggle{position:absolute;right:var(--gutter);top:-34px;min-height:28px;padding:4px 12px;line-height:1.2;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
 @media (hover:hover){.marquee-toggle:hover{color:var(--ink);border-color:var(--ink)}}
-.marquee.is-paused .marquee-track{animation-play-state:paused}
+/* "Pause motion" stops all background motion: this strip here, the dust and grain in site.js */
+html.motion-paused .marquee-track{animation-play-state:paused}
 .marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:20px 0;overflow:hidden;white-space:nowrap}
 .marquee-track{display:inline-flex;gap:0;animation:marquee 46s linear infinite;will-change:transform}
 @media (hover:hover){.marquee:hover .marquee-track{animation-play-state:paused}}
@@ -216,6 +224,7 @@ html.no-js .marquee-toggle,html.js-failed .marquee-toggle{display:none}
 .field label{font-size:.8125rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
 .field input,.field textarea{width:100%;background:transparent;border:0;border-bottom:1px solid rgba(237,232,223,.45);border-radius:0;color:var(--ink);font:inherit;font-size:1.125rem;padding:10px 0;transition:border-color .4s;resize:none}
 .field input:focus,.field textarea:focus{outline:none;border-bottom-width:2px;border-color:var(--accent)}
+.field:focus-within label{color:var(--ink)}
 .field [aria-invalid="true"],.field [aria-invalid="true"]:focus{border-bottom:2px solid var(--error)}
 /* autofill keeps the dark field and light text (Chrome and Safari paint their own boxes otherwise) */
 .field input:-webkit-autofill,.field textarea:-webkit-autofill{-webkit-text-fill-color:var(--ink);caret-color:var(--ink);box-shadow:0 0 0 1000px var(--bg) inset}
@@ -242,8 +251,12 @@ html.no-js .marquee-toggle,html.js-failed .marquee-toggle{display:none}
 @supports (text-wrap:pretty){.h2,.hero-title,.arrive-lead,.about-p,[data-split] .l{text-wrap:balance}}
 
 @media (prefers-reduced-motion:reduce){
-  .marquee-track{animation:none}
+  /* no loader, and the disciplines as one still, centred line that wraps (all nine, no repeat) */
+  .loader{display:none}
   .marquee-toggle{display:none}
-  .scroll-hint i::after{animation:none}
+  .marquee{white-space:normal;padding:22px var(--gutter)}
+  .marquee-track{animation:none;display:flex;flex-wrap:wrap;justify-content:center;row-gap:12px}
+  .marquee-track span:nth-child(n+10){display:none}
+  .marquee-track span:nth-child(9)::after{content:none}
   .btn,.link::after,.nav::before{transition:none}
 }
