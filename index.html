@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- dark: keeps Android's auto-darkening off the page and gives dark scrollbars and form autofill -->
+<meta name="color-scheme" content="dark">
 <script>
 /* Loader first: a browser that can run js/site.js (it needs import maps) drops the static fallback before the
    first paint, so a first visit sees the loader instead of the finished page with the loader dropping over it.
@@ -109,7 +111,7 @@ setTimeout(jsFailed, 9000);
           <span class="l">for your life.</span>
         </h1>
         <div class="hero-foot">
-          <p class="hero-sub reveal-line">I'm Bart. Full-spectrum health coaching and private yoga, built around what you actually need, not a menu of workouts.</p>
+          <p class="hero-sub reveal-line">I’m Bart. Full-spectrum health coaching and private yoga, built around what you actually need, not a menu of workouts.</p>
           <div class="hero-cta reveal-line">
             <a class="btn" href="#contact" data-magnetic>Request a consultation</a>
             <a class="link" href="#how">How it starts</a>
@@ -127,9 +129,8 @@ setTimeout(jsFailed, 9000);
 
   <section class="arrive" id="arrive">
     <figure class="gl-fig arrive-fig" data-gl data-shape="none" data-focus="0.46 0.4">
-      <picture><source type="image/webp" srcset="img/bart-10.webp"><img style="object-position:46% 40%" src="img/bart-10.jpg" alt="Bart with arms crossed against a blue sky" width="2000" height="1334" loading="eager" decoding="async"></picture>
+      <picture><source type="image/webp" srcset="img/bart-10.webp 2000w, img/bart-10-3200.webp 3200w" sizes="100vw"><img style="object-position:46% 40%" src="img/bart-10.jpg" alt="Bart with arms crossed against a blue sky" width="2000" height="1334" loading="eager" decoding="async"></picture>
     </figure>
-    <div class="arrive-shade" aria-hidden="true"></div>
     <div class="arrive-copy wrap">
       <p class="arrive-lead" data-split>Nearly twenty years of helping people move better, get stronger, and stay in one piece.</p>
       <p class="arrive-cap eyebrow">Bart Firch <span class="dot"></span> San&nbsp;Jose, California</p>
@@ -152,10 +153,10 @@ setTimeout(jsFailed, 9000);
     <div class="wrap about-grid">
       <div class="about-text">
         <h2 class="eyebrow reveal-line">About</h2>
-        <p class="about-p reveal-line">I've spent nearly twenty years studying the human body, testing its limits, and teaching people how to reclaim theirs.</p>
-        <p class="about-p reveal-line">I'm an athlete, an educator, and a student of a machine that never stops teaching me.</p>
-        <p class="about-p reveal-line">I don't sell workouts. I teach people how to become stronger, more capable, and harder to break.</p>
-        <p class="about-pull" data-split>Your body is your responsibility. <em>Helping you master it is mine.</em></p>
+        <p class="about-p reveal-line">I’ve spent nearly twenty years studying the human body, testing its limits, and teaching people how to reclaim theirs.</p>
+        <p class="about-p reveal-line">I’m an athlete, an educator, and a student of a machine that never stops teaching me.</p>
+        <p class="about-p reveal-line">I don’t sell workouts. I teach people how to become stronger, more capable, and harder to break.</p>
+        <p class="about-pull" data-split><span class="l">Your body is your responsibility.</span> <span class="l"><em>Helping you master it is mine.</em></span></p>
       </div>
       <figure class="gl-fig about-fig" data-gl data-shape="arch" data-focus="0.5 0.8">
         <picture><source type="image/webp" srcset="img/bart-ready.webp"><img style="object-position:50% 80%" src="img/bart-ready.jpg" alt="Bart in an athletic ready stance on a gravel path at sunset" width="1003" height="1568" loading="lazy" decoding="async"></picture>
@@ -167,7 +168,7 @@ setTimeout(jsFailed, 9000);
     <div class="wrap">
       <div class="work-head">
         <p class="eyebrow reveal-line">Two ways to work with me</p>
-        <h2 class="h2" data-split>Your health isn't a collection of <em>separate problems.</em></h2>
+        <h2 class="h2" data-split><span class="l">Your health isn’t a collection of</span> <span class="l"><em>separate problems.</em></span></h2>
       </div>
       <div class="work-grid">
         <article class="offer">
@@ -184,7 +185,7 @@ setTimeout(jsFailed, 9000);
         </article>
         <article class="offer offer-b">
           <figure class="gl-fig offer-fig" data-gl data-shape="rect" data-focus="0.87 0.5">
-            <picture><source type="image/webp" srcset="img/bart-dancer.webp"><img style="object-position:87% 50%" src="img/bart-dancer.jpg" alt="Bart in dancer's pose, balanced on a concrete rail" width="900" height="931" loading="lazy" decoding="async"></picture>
+            <picture><source type="image/webp" srcset="img/bart-dancer.webp"><img style="object-position:87% 50%" src="img/bart-dancer.jpg" alt="Bart in dancer’s pose, balanced on a concrete rail" width="900" height="931" loading="lazy" decoding="async"></picture>
           </figure>
           <div class="offer-body">
             <p class="eyebrow reveal-line">02</p>
@@ -202,12 +203,12 @@ setTimeout(jsFailed, 9000);
     <div class="wrap how-grid">
       <div class="how-head">
         <p class="eyebrow reveal-line">How it starts</p>
-        <h2 class="h2" data-split>It starts with <em>a conversation.</em></h2>
-        <p class="how-sub reveal-line">No booking calendars. No packages to pick from. We talk first.</p>
+        <h2 class="h2" data-split><span class="l">It starts with</span> <span class="l"><em>a conversation.</em></span></h2>
+        <p class="how-sub reveal-line">No booking calendars. No packages to pick from. <span class="l">We talk first.</span></p>
       </div>
       <ol class="steps">
-        <li class="step reveal-line"><span class="step-n">01</span><div><h3 class="h3">We talk</h3><p>A consultation. You tell me what's going on and what you want. I listen and ask questions.</p></div></li>
-        <li class="step reveal-line"><span class="step-n">02</span><div><h3 class="h3">I tell you what I think</h3><p>Honestly. What you need, what you don't, and whether I'm the right person to help.</p></div></li>
+        <li class="step reveal-line"><span class="step-n">01</span><div><h3 class="h3">We talk</h3><p>A consultation. You tell me what’s going on and what you want. I listen and ask questions.</p></div></li>
+        <li class="step reveal-line"><span class="step-n">02</span><div><h3 class="h3">I tell you what I think</h3><p>Honestly. What you need, what you don’t, and whether I’m the right person to help.</p></div></li>
         <li class="step reveal-line"><span class="step-n">03</span><div><h3 class="h3">We get to work</h3><p>Coaching, yoga, or both. Built around your life and adjusted as you go.</p></div></li>
       </ol>
     </div>
@@ -226,8 +227,8 @@ setTimeout(jsFailed, 9000);
     <div class="wrap contact-grid">
       <div class="contact-head">
         <p class="eyebrow reveal-line">Contact</p>
-        <h2 class="h2 h2-big" data-split>You've got one body. <em>Let's take care of it.</em></h2>
-        <p class="contact-sub reveal-line">Tell me what you're working toward, what's holding you back, and what you want your body to be capable of. I'll personally review your inquiry, and we'll start with a conversation.</p>
+        <h2 class="h2 h2-big" data-split><span class="l">You’ve got one body.</span> <span class="l"><em>Let’s take care of it.</em></span></h2>
+        <p class="contact-sub reveal-line">Tell me what you’re working toward, what’s holding you back, and what you want your body to be capable of. I’ll personally review your inquiry, and we’ll start with a conversation.</p>
         <div class="signoff reveal-line">
           <figure class="gl-fig portrait-fig" data-gl data-shape="round" data-focus="0.5 0.45">
             <picture><source type="image/webp" srcset="img/bart-portrait.webp"><img style="object-position:50% 45%" src="img/bart-portrait.jpg" alt="Bart Firch" width="288" height="288" loading="lazy" decoding="async"></picture>
@@ -240,15 +241,17 @@ setTimeout(jsFailed, 9000);
            The access key and the sender name are in both files on purpose: change them in both places.
            botcheck is the honeypot: a hidden checkbox, because browser autofill can fill a hidden text field. -->
       <form class="form reveal-line" id="form" action="https://api.web3forms.com/submit" method="POST">
-        <input type="hidden" name="access_key" value="07ae0616-2fcd-4869-8586-c0c850a5a5fb">
+        <input type="hidden" name="access_key" value="f86775f9-9d9f-4639-b0bb-601c3712e8e3">
         <input type="hidden" name="subject" value="Consultation request from the website">
         <input type="hidden" name="from_name" value="Bart Firch website">
+        <input type="hidden" name="redirect" value="https://bartonfirch.com/thanks.html">
         <input class="hp" type="checkbox" name="botcheck">
-        <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" type="text" autocomplete="name" required></div>
-        <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="An email address with a domain, like name@example.com"></div>
-        <div class="field"><label for="f-msg">What's going on?</label><textarea id="f-msg" name="message" rows="3" required></textarea></div>
+        <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" type="text" autocomplete="name" required aria-describedby="e-f-name"><p class="field-error" id="e-f-name" hidden></p></div>
+        <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required pattern="[^@\s]+@[^@\s]+\.[^@\s]+" title="An email address with a domain, like name@example.com" aria-describedby="e-f-email"><p class="field-error" id="e-f-email" hidden></p></div>
+        <div class="field"><label for="f-msg">What’s going on?</label><textarea id="f-msg" name="message" rows="5" required aria-describedby="e-f-msg"></textarea><p class="field-error" id="e-f-msg" hidden></p></div>
         <button class="btn" type="submit" id="form-submit" data-magnetic>Request a consultation</button>
         <p class="form-note" id="form-note" role="status"></p>
+        <button class="link form-again" type="button" id="form-again" hidden>Wrong address? Fix it</button>
       </form>
     </div>
   </section>

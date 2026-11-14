@@ -319,17 +319,27 @@ function initGL(manager) {
       GL.planes.push(plane);
       if (gatesLoader) manager.itemStart(img.src);
       if (shown) img.loading = 'eager';
+      /* three.js gets its own copy of the photo, from the same file (one download). The page <img> reports its
+         layout width, not the file's: in windows over about 2063px that made three.js ask for more mip levels than
+         the picture has, the upload failed and the big photo drew black. A copy reports the file's own size. */
+      const pix = new Image();
       const ready = () => {
-        tex.image = img; tex.needsUpdate = true;
-        try { renderer.initTexture(tex); } catch (e) { /* upload happens on first draw */ }
+        tex.image = pix; tex.needsUpdate = true;
+        try {
+          const gl = renderer.getContext();
+          gl.getError(); // clear anything older, so the check below only sees this upload
+          renderer.initTexture(tex);
+          if (gl.getError() !== gl.NO_ERROR) return failed(); // never a black box: the page photo shows instead
+        } catch (e) { /* upload happens on first draw */ }
         plane.loaded = true;
         if (plane.wanted) plane.reveal();
         if (gatesLoader) manager.itemEnd(img.src);
       };
       const failed = () => { plane.dead = true; fig.classList.add('gl-off'); if (gatesLoader) manager.itemEnd(img.src); };
-      (img.decode ? img.decode() : Promise.resolve()).then(ready).catch(() => {
-        if (img.complete && img.naturalWidth) ready(); else failed();
-      });
+      (img.decode ? img.decode() : Promise.resolve())
+        .catch(() => { if (!img.naturalWidth) throw new Error('photo did not load'); })
+        .then(() => { pix.src = img.currentSrc || img.src; return pix.decode ? pix.decode() : undefined; })
+        .then(ready, () => (pix.naturalWidth ? ready() : failed()));
     });
     html.classList.add('gl-planes');
   }
@@ -442,7 +452,7 @@ function start() {
   const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
   tl.to(loader, { clipPath: 'inset(0 0 100% 0)', duration: 1.1, ease: 'expo.inOut', delay: 0.35, onComplete: () => { loader.style.display = 'none'; } })
     .add(() => { if (lenis) lenis.start(); GL.fadeTarget = 1; }, '-=0.5')
-    .to(heroWords, { y: 0, duration: 1.4, stagger: 0.045 }, '-=0.55')
+    .to(heroWords, { y: 0, duration: 1.4, stagger: 0.045, onComplete: () => hero.querySelector('.hero-title').classList.add('is-in') }, '-=0.55')
     .to(heroLines, { opacity: 1, y: 0, duration: 1.2, stagger: 0.1 }, '-=1.0');
   /* skip the intro when it would play over content the visitor already sees (reduced motion, or the static page shown after a slow load) */
   if (reduced || html.classList.contains('js-failed')) tl.progress(1);
@@ -464,7 +474,7 @@ function setupScroll() {
   if (!late) gsap.set(arriveCopy, { opacity: 0, y: 24 });
   ScrollTrigger.create({ trigger: arrive, start: 'top 62%', once: true, onEnter: () => {
     gsap.to(arriveCopy, { opacity: 1, y: 0, duration: 1.1, ease: 'expo.out' });
-    gsap.to(arriveWords, { y: 0, duration: 1.3, ease: 'expo.out', stagger: 0.03, overwrite: true });
+    gsap.to(arriveWords, { y: 0, duration: 1.3, ease: 'expo.out', stagger: 0.03, overwrite: true, onComplete: () => arrive.querySelector('.arrive-lead').classList.add('is-in') });
   } });
 
   /* particle field: strong in the hero, faint through the page, back for the close */
@@ -521,7 +531,7 @@ function setupScroll() {
   document.querySelectorAll('[data-split]').forEach((el) => {
     if (el.closest('.hero, .arrive')) return;
     const words = el.querySelectorAll('.wi');
-    ScrollTrigger.create({ trigger: el, start: 'top 85%', once: true, onEnter: () => gsap.to(words, { y: 0, duration: 1.3, ease: 'expo.out', stagger: 0.03 }) });
+    ScrollTrigger.create({ trigger: el, start: 'top 85%', once: true, onEnter: () => gsap.to(words, { y: 0, duration: 1.3, ease: 'expo.out', stagger: 0.03, onComplete: () => el.classList.add('is-in') }) });
   });
   const lines = [...document.querySelectorAll('.reveal-line')].filter((el) => !el.closest('.hero'));
   ScrollTrigger.batch(lines, { start: 'top 90%', once: true, onEnter: (batch) => gsap.to(batch, { opacity: 1, y: 0, duration: 1.1, ease: 'expo.out', stagger: 0.08, overwrite: true }) });
@@ -564,13 +574,13 @@ function setupMarquee() {
 }
 
 /* ---------- form ---------- */
-/* Delivery. With this script running, the form goes out as JSON to FORM.endpoint; if that fails, the visitor's
-   mail client opens. If this script never runs, the <form> in index.html posts itself to the same endpoint.
+/* Delivery. With this script running, the form goes out as JSON to FORM.endpoint. If this script never runs, the
+   <form> in index.html posts itself to the same endpoint and Web3Forms sends the visitor to thanks.html.
    The access key and the sender name are in both files on purpose (this script must not depend on the HTML):
-   change both together. */
+   change both together. The key is Bart's own (13 Nov 2026), so requests reach his inbox. */
 const FORM = {
   endpoint: 'https://api.web3forms.com/submit',
-  extra: { access_key: '07ae0616-2fcd-4869-8586-c0c850a5a5fb' },
+  extra: { access_key: 'f86775f9-9d9f-4639-b0bb-601c3712e8e3' },
   fallbackEmail: 'bart.firch@gmail.com',
 };
 
@@ -578,38 +588,59 @@ function setupForm() {
   const form = document.getElementById('form');
   const note = document.getElementById('form-note');
   const submit = document.getElementById('form-submit');
+  const again = document.getElementById('form-again');
   const fields = [form.elements.name, form.elements.email, form.elements.message];
   const label = submit.textContent;
-  const need = { name: 'your name', email: 'a working email', message: 'a line about what is going on' };
-  fields.forEach((f) => f.setAttribute('aria-describedby', 'form-note'));
 
-  const say = (text, isError) => {
-    note.textContent = text;
+  /* each field has its own message line under it (aria-describedby in the HTML) */
+  const problem = (f) => {
+    const v = f.value.trim();
+    if (f.name === 'name') return v ? '' : 'Add your name.';
+    if (f.name === 'email') {
+      if (!v) return 'Add your email so I can write back.';
+      return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) ? '' : 'That email looks incomplete. It needs an @ and an ending, like name@example.com.';
+    }
+    return v ? '' : 'Add a line about what’s going on.';
+  };
+  const mark = (f) => {
+    const msg = problem(f);
+    const line = document.getElementById('e-' + f.id);
+    if (line) { line.textContent = msg; line.hidden = !msg; }
+    if (msg) f.setAttribute('aria-invalid', 'true'); else f.removeAttribute('aria-invalid');
+    return !msg;
+  };
+  /* say() takes text or a list of text and nodes; never HTML, so nothing a visitor types can become markup */
+  const say = (parts, isError) => {
+    note.replaceChildren(...[].concat(parts));
     note.classList.toggle('is-error', !!isError);
   };
+  const tally = () => {
+    const n = fields.filter((f) => f.getAttribute('aria-invalid') === 'true').length;
+    say(n === 0 ? '' : n === 1 ? 'One field needs a look.' : n + ' fields need a look.', n > 0);
+  };
+  /* a message goes away as soon as the field is fixed */
+  fields.forEach((f) => f.addEventListener('input', () => { if (f.getAttribute('aria-invalid') === 'true') { mark(f); tally(); } }));
 
-  const mailtoFallback = (data) => {
-    if (!FORM.fallbackEmail) {
-      say('Something went wrong sending that. Please try again in a moment.', true);
-      return;
-    }
-    const body = 'Name: ' + data.name + '\nEmail: ' + data.email + '\n\n' + data.message;
-    window.location.href = 'mailto:' + FORM.fallbackEmail
-      + '?subject=' + encodeURIComponent('Consultation request from ' + data.name)
-      + '&body=' + encodeURIComponent(body);
-    say('That did not send from here. Your email app should open so you can send it directly. If it does not, write to me at ' + FORM.fallbackEmail + '.', true);
+  /* sending failed: keep what they typed, and give the address as a link they can see */
+  const failed = (data) => {
+    const a = document.createElement('a');
+    a.href = 'mailto:' + FORM.fallbackEmail + '?subject=' + encodeURIComponent('Consultation request from ' + data.name)
+      + '&body=' + encodeURIComponent('Name: ' + data.name + '\nEmail: ' + data.email + '\n\n' + data.message);
+    a.textContent = FORM.fallbackEmail;
+    say(['That didn’t send, and it’s not you. Try again in a minute, or email me at ', a, '.'], true);
   };
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault(); // first: the form has a real action, so a return above this line would post it natively
-    if (form.classList.contains('is-sending')) return; // one send at a time
+    if (form.classList.contains('is-sending')) return; // one send at a time (Enter in a field lands here too)
     if (form.elements.botcheck?.checked) return; // honeypot (?. because an HTML file cached from before this change has no botcheck)
-    fields.forEach((f) => f.removeAttribute('aria-invalid'));
-    const bad = fields.filter((f) => !f.value.trim() || (f.type === 'email' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.value.trim())));
+    const bad = fields.filter((f) => !mark(f));
     if (bad.length) {
-      bad.forEach((f) => f.setAttribute('aria-invalid', 'true'));
-      say('Add ' + new Intl.ListFormat('en').format(bad.map((f) => need[f.name])) + '.', true);
-      bad[0].focus();
+      tally();
+      bad[0].focus({ preventScroll: true });
+      /* bring the first wrong field to mid-screen, clear of the returning nav */
+      if (lenis) lenis.scrollTo(bad[0], { offset: -innerHeight / 2 + 60, duration: 0.6 });
+      else bad[0].scrollIntoView({ block: 'center' });
       return;
     }
 
@@ -633,18 +664,30 @@ function setupForm() {
           subject: 'Consultation request from ' + data.name,
           from_name: 'Bart Firch website',
         }, FORM.extra, data, { replyto: data.email })),
-        signal: AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined, // a hung request ends in the mail fallback, not a stuck form
+        signal: AbortSignal.timeout ? AbortSignal.timeout(20000) : undefined, // a stalled connection ends in the message below, not a stuck form
       });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      form.reset();
-      say('Thanks, ' + first + '. That came through, and I will be in touch.');
+      /* delivered only when Web3Forms says so: a false thank-you loses an enquiry in silence */
+      const out = await res.json().catch(() => null);
+      if (!res.ok || !out || out.success !== true) throw new Error('HTTP ' + res.status);
+      form.classList.add('is-sent');
+      say('Thanks, ' + first + '. That came through, and I’ll reply to ' + data.email + '.');
+      again.hidden = false;
+      note.tabIndex = -1;
+      note.focus();
     } catch (err) {
-      mailtoFallback(data);
+      failed(data);
     } finally {
       form.classList.remove('is-sending');
       submit.removeAttribute('aria-disabled');
       submit.textContent = label;
     }
+  });
+  /* typed the wrong address: the fields come back with their text, and Email takes focus */
+  again.addEventListener('click', () => {
+    form.classList.remove('is-sent');
+    again.hidden = true;
+    say('');
+    form.elements.email.focus();
   });
   form.noValidate = true; // last: the browser's own validation guards the plain post until this handler is attached
 }

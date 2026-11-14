@@ -5,14 +5,15 @@
   --muted:#BFB9AE;
   --line:rgba(237,232,223,.16);
   --accent:#E0A25A;
-  --error:#F0866B;
+  --error:#F5A08A;
   --serif:'Fraunces',Georgia,'Times New Roman',serif;
   --sans:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
   --gutter:clamp(20px,5vw,72px);
   --ease:cubic-bezier(.19,1,.22,1);
 }
 *{box-sizing:border-box}
-html{background:var(--bg);color:var(--ink);scroll-behavior:auto;-webkit-text-size-adjust:100%;scrollbar-gutter:stable}
+html{background:var(--bg);color:var(--ink);color-scheme:dark;scroll-behavior:auto;-webkit-text-size-adjust:100%;scrollbar-gutter:stable}
+[hidden]{display:none!important}
 html.lenis,html.lenis body{height:auto}
 .lenis.lenis-smooth{scroll-behavior:auto!important}
 .lenis.lenis-stopped{overflow:hidden}
@@ -38,21 +39,28 @@ main section[id]{scroll-margin-top:40px}
 /* type */
 .eyebrow{font-size:.8125rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:400}
 .dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:currentColor;vertical-align:middle;margin:0 .6em;opacity:.7}
-.h2{font-weight:300;font-size:clamp(2.125rem,5.2vw,5.375rem);line-height:1;letter-spacing:-.03em;text-wrap:balance}
+.h2{font-weight:300;font-size:clamp(2.125rem,5.2vw,5.375rem);line-height:1;letter-spacing:-.03em}
+/* hand-set lines: each sentence part on its own line, wrapped normally (balancing split-word lines breaks them on Safari 18) */
+[data-split] .l,.how-sub .l{display:block;text-wrap:wrap}
 .h2-big{font-size:clamp(2.5rem,6.2vw,6.5rem);line-height:.98;max-width:14em}
 .h3{font-weight:500;font-size:clamp(1.25rem,1.7vw,1.75rem);line-height:1.15;letter-spacing:-.015em}
 .link{position:relative;display:inline-block;font-weight:400;padding-bottom:4px}
 .link::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;transform-origin:left;transition:transform .6s var(--ease)}
 @media (hover:hover){.link:hover::after{transform:scaleX(0);transform-origin:right}}
-.btn{display:inline-flex;align-items:center;justify-content:center;height:56px;padding:0 28px;border-radius:999px;border:1px solid var(--line);background:var(--ink);color:var(--bg);font-weight:500;font-size:.9375rem;letter-spacing:.01em;cursor:pointer;transition:background .4s,color .4s,border-color .4s;will-change:transform}
+/* min-height, not height: with a large browser text size the label wraps inside the pill instead of spilling out */
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:12px 28px;line-height:1.25;text-align:center;border-radius:999px;border:1px solid var(--line);background:var(--ink);color:var(--bg);font-weight:500;font-size:.9375rem;letter-spacing:.01em;cursor:pointer;transition:background .4s,color .4s,border-color .4s;will-change:transform}
 @media (hover:hover){.btn:hover{background:var(--accent);border-color:var(--accent);color:#0B0B0C}}
-.btn-sm{height:44px;padding:0 20px;font-size:.875rem;background:transparent;color:var(--ink);border-color:var(--line)}
+.btn-sm{min-height:44px;padding:8px 20px;font-size:.875rem;background:transparent;color:var(--ink);border-color:var(--line)}
 @media (hover:hover){.btn-sm:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}}
 button.btn{font-family:inherit}
 
 /* split text */
-.w{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.08em;margin-bottom:-.08em}
-.wi{display:inline-block;transform:translateY(112%);will-change:transform}
+/* each word rises inside its own mask; the mask has room for the italic's tails and overhang (cancelled by an equal
+   negative margin, so nothing moves) and is dropped once the line has landed (is-in), so no letter is ever cut at rest */
+.w{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .1em .22em;margin:0 -.1em -.22em}
+.wi{display:inline-block;transform:translateY(130%);will-change:transform}
+.is-in .w,html.no-js .w,html.js-failed .w,html.no-motion .w{overflow:visible}
+.is-in .wi,html.no-motion .wi{will-change:auto}
 /* hidden for the reveal only once js/site.js runs (js-on): until then the text paints under the loader */
 html.js-on .reveal-line{opacity:0;transform:translateY(24px)}
 html.no-js .reveal-line,html.no-js .wi,html.no-js .arrive-copy,
@@ -70,7 +78,7 @@ html.no-motion .reveal-line,html.no-motion .wi,html.no-motion .arrive-copy{opaci
 .loader-line i{display:block;height:100%;width:0;background:var(--ink)}
 
 /* nav */
-.nav{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px var(--gutter) 40px;color:var(--ink);background:linear-gradient(to bottom,rgba(11,11,12,.88),rgba(11,11,12,.55) 45%,rgba(11,11,12,0));pointer-events:none}
+.nav{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding:20px var(--gutter) 40px;color:var(--ink);background:linear-gradient(to bottom,rgba(11,11,12,.88),rgba(11,11,12,.55) 45%,rgba(11,11,12,0));pointer-events:none}
 .nav > *{pointer-events:auto}
 /* solid backing once the bar sits over content, so its text never collides with the page text (site.js sets is-solid) */
 .nav::before{content:"";position:absolute;inset:0 0 20px;z-index:-1;background:rgba(11,11,12,.84);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);opacity:0;transition:opacity .35s}
@@ -79,7 +87,7 @@ html.no-motion .reveal-line,html.no-motion .wi,html.no-motion .arrive-copy{opaci
 .nav:has(:focus-visible){transform:none!important}
 /* static fallback: no script to retract the bar, so it scrolls away with the page */
 html.no-js .nav,html.js-failed .nav{position:absolute}
-.nav-name{font-size:1rem;font-weight:500;letter-spacing:-.01em}
+.nav-name{font-size:1rem;font-weight:500;letter-spacing:-.01em;white-space:nowrap}
 .nav-links{display:flex;gap:28px;font-size:.875rem;color:var(--ink)}
 .nav-links a{position:relative}
 .nav-links a::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .5s var(--ease)}
@@ -87,11 +95,10 @@ html.no-js .nav,html.js-failed .nav{position:absolute}
 @media (max-width:720px){.nav-links{display:none}}
 
 /* hero */
-.hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:clamp(92px,13vh,150px);padding-bottom:clamp(40px,8vh,96px);position:relative}
+.hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:max(clamp(92px,13vh,150px),6.5rem);padding-bottom:clamp(40px,8vh,96px);position:relative}
 .hero-in{display:grid;grid-template-columns:minmax(0,1fr) clamp(230px,24vw,440px);gap:clamp(32px,4vw,72px);align-items:end}
 .hero-copy{display:grid;gap:clamp(24px,3.4vh,40px);min-width:0}
-.hero-title{font-weight:300;font-size:clamp(2.125rem,6.4vw,6.5rem);line-height:.98;letter-spacing:-.035em;text-wrap:balance}
-.hero-title .l{display:block}
+.hero-title{font-weight:300;font-size:clamp(2.125rem,6.4vw,6.5rem);line-height:.98;letter-spacing:-.035em}
 .hero-title em{font-variation-settings:'opsz' 144;font-size:1.06em;color:var(--ink)}
 .hero-foot{display:grid;gap:26px;max-width:40em}
 .hero-sub{max-width:36em;color:var(--body);font-size:clamp(1.125rem,1.3vw,1.375rem)}
@@ -127,17 +134,19 @@ html.gl-planes .gl-fig.gl-off[data-shape="round"]{border-radius:50%}
 /* arrive: one full-bleed frame, no pin, no zoom */
 .arrive{position:relative;height:min(100svh,calc(100vw * .62));min-height:min(62svh,520px,100vw);overflow:hidden}
 /* phones: a taller frame puts the statement over his dark shirt instead of his face and the white bleachers */
-@media (max-width:600px){.arrive{height:auto;min-height:min(135vw,100svh)}}
+@media (max-width:600px){.arrive{height:auto;min-height:max(min(135vw,100svh),31rem)}}
 .arrive-fig{position:absolute;inset:0;width:100%;height:100%}
-.arrive-shade{position:absolute;left:0;right:0;bottom:0;height:62%;background:linear-gradient(to top,rgba(11,11,12,.9) 28%,rgba(11,11,12,0));pointer-events:none}
-.arrive-copy{position:absolute;left:0;right:0;bottom:clamp(28px,6vh,72px);display:grid;gap:16px}
-.arrive-lead{font-weight:300;font-size:clamp(1.625rem,3.8vw,4.25rem);line-height:1.04;letter-spacing:-.03em;max-width:16em;text-wrap:balance}
+.arrive-copy{position:absolute;left:0;right:0;bottom:clamp(28px,6vh,72px);display:grid;gap:16px;isolation:isolate}
+/* the statement carries its own shade, from a little above its first line to the bottom of the photo, so it stays
+   readable when the words grow (small phones, large text, zoom); it fades in with the words */
+.arrive-copy::before{content:"";position:absolute;z-index:-1;pointer-events:none;left:50%;width:100vw;transform:translateX(-50%);top:-60%;bottom:calc(-1 * clamp(28px,6vh,72px));background:linear-gradient(to top,rgba(11,11,12,.9) 30%,rgba(11,11,12,.66) 67%,rgba(11,11,12,0))}
+.arrive-lead{font-weight:300;font-size:clamp(1.625rem,3.8vw,4.25rem);line-height:1.04;letter-spacing:-.03em;max-width:16em}
 .arrive-cap{color:var(--ink)}
 
 /* disciplines strip */
 .strip{padding-block:clamp(32px,6vh,72px) 0}
 .marquee-wrap{position:relative}
-.marquee-toggle{position:absolute;right:var(--gutter);top:-34px;height:28px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.marquee-toggle{position:absolute;right:var(--gutter);top:-34px;min-height:28px;padding:4px 12px;line-height:1.2;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
 @media (hover:hover){.marquee-toggle:hover{color:var(--ink);border-color:var(--ink)}}
 .marquee.is-paused .marquee-track{animation-play-state:paused}
 .marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:20px 0;overflow:hidden;white-space:nowrap}
@@ -207,18 +216,30 @@ html.no-js .marquee-toggle,html.js-failed .marquee-toggle{display:none}
 .field label{font-size:.8125rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
 .field input,.field textarea{width:100%;background:transparent;border:0;border-bottom:1px solid rgba(237,232,223,.45);border-radius:0;color:var(--ink);font:inherit;font-size:1.125rem;padding:10px 0;transition:border-color .4s;resize:none}
 .field input:focus,.field textarea:focus{outline:none;border-bottom-width:2px;border-color:var(--accent)}
-.field [aria-invalid="true"],.field [aria-invalid="true"]:focus{border-color:var(--error)}
+.field [aria-invalid="true"],.field [aria-invalid="true"]:focus{border-bottom:2px solid var(--error)}
+/* autofill keeps the dark field and light text (Chrome and Safari paint their own boxes otherwise) */
+.field input:-webkit-autofill,.field textarea:-webkit-autofill{-webkit-text-fill-color:var(--ink);caret-color:var(--ink);box-shadow:0 0 0 1000px var(--bg) inset}
+.field-error{font-size:1.125rem;line-height:1.4;color:var(--error)}
 .hp{display:none}
 /* dim the children: the reveal leaves an inline opacity on the form itself */
 .form.is-sending{pointer-events:none}
 .form.is-sending > *{opacity:.6}
 .form-note.is-error{color:var(--error)}
-.form-note{font-size:.9375rem;color:var(--accent);min-height:1.5em;justify-self:stretch}
+.form-note{font-size:1.125rem;line-height:1.4;color:var(--accent);min-height:1.5em;justify-self:stretch}
+.form-note a{text-decoration:underline;text-underline-offset:3px}
+/* sent: the fields step aside and the thank-you takes their place */
+.form.is-sent .field,.form.is-sent > .btn{display:none}
+.form.is-sent .form-note{font-size:clamp(1.5rem,2.4vw,2.5rem);line-height:1.2;color:var(--ink)}
+.form-again{background:none;border:0;color:var(--ink);font:inherit;cursor:pointer;padding:0 0 4px}
 @media (max-width:840px){.contact-grid{grid-template-columns:1fr}}
 
 /* footer */
 .foot{border-top:1px solid var(--line);padding-block:28px 40px;font-size:.875rem;color:var(--muted)}
 .foot-in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* balanced wrapping only where text-wrap:pretty also exists (Chrome, Edge, Safari 26): Safari 17.5 to 18 balance
+   word-split headings wrongly (the hero broke into six lines on iOS 18), so they wrap normally there */
+@supports (text-wrap:pretty){.h2,.hero-title,.arrive-lead,.about-p,[data-split] .l{text-wrap:balance}}
 
 @media (prefers-reduced-motion:reduce){
   .marquee-track{animation:none}
