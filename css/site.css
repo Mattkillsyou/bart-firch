@@ -4,15 +4,23 @@
   --body:#E4DED3;
   --muted:#BFB9AE;
   --line:rgba(237,232,223,.16);
+  --line-strong:rgba(237,232,223,.5);
   --accent:#E0A25A;
   --error:#F5A08A;
   --serif:'Fraunces',Georgia,'Times New Roman',serif;
   --sans:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
-  --gutter:clamp(20px,5vw,72px);
+  /* one container for every section: 90rem of content between the gutters (rem, so it scales on very wide screens) */
+  --page:90rem;
+  --gutter:clamp(20px,5vw,4.5rem);
+  --col-gap:clamp(16px,1.67vw,2rem);
+  /* one vertical rhythm tied to width, not window height */
+  --section:clamp(72px,6.25vw,7.5rem);
   --ease:cubic-bezier(.19,1,.22,1);
 }
 *{box-sizing:border-box}
 html{background:var(--bg);color:var(--ink);color-scheme:dark;scroll-behavior:auto;-webkit-text-size-adjust:100%;scrollbar-gutter:stable}
+/* very wide screens: the whole page grows with the window instead of floating as a small island (capped at 4/3) */
+@media (min-width:1921px){html{font-size:clamp(100%,.8333vw,133.34%)}}
 [hidden]{display:none!important}
 html.lenis,html.lenis body{height:auto}
 .lenis.lenis-smooth{scroll-behavior:auto!important}
@@ -25,34 +33,39 @@ a{color:inherit;text-decoration:none}
 h1,h2,h3,p,ul,ol,figure{margin:0}
 p{text-wrap:pretty}
 ul,ol{padding:0;list-style:none}
-em{font-family:var(--serif);font-style:italic;font-weight:300;font-variation-settings:'opsz' 144}
+/* the italic that finishes each headline: a touch larger than the sans it follows, so it never reads as smaller */
+em{font-family:var(--serif);font-style:italic;font-weight:300;font-variation-settings:'opsz' 144;font-size:1.08em;letter-spacing:-.005em}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
-.skip{position:absolute;left:-9999px;top:0;z-index:60;padding:12px 18px;background:var(--ink);color:var(--bg);border-radius:0 0 10px 0;font-size:.875rem}
+.skip{position:absolute;left:-9999px;top:0;z-index:60;padding:12px 18px;background:var(--ink);color:var(--bg);border-radius:0 0 10px 0;font-size:1rem}
 .skip:focus{left:0}
 [tabindex="-1"]:focus{outline:none}
-.wrap{padding-inline:var(--gutter);max-width:1680px;margin-inline:auto}
-.gl{position:fixed;top:0;left:0;width:100%;height:100lvh;z-index:0;pointer-events:none;display:block}
+.wrap{width:100%;padding-inline:var(--gutter);max-width:calc(var(--page) + 2 * var(--gutter));margin-inline:auto}
+.gl{position:fixed;top:0;left:0;width:100%;height:100vh;height:100lvh;z-index:0;pointer-events:none;display:block}
 main{position:relative;z-index:1}
 /* in-page links stop short of the nav bar, so a section's label is not under its backing (js/site.js passes this to Lenis) */
 main section[id]{scroll-margin-top:40px}
 
 /* type */
-.eyebrow{font-size:.8125rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:400}
+.eyebrow{font-size:clamp(.9375rem,.5rem + .417vw,1rem);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:400}
 .dot{display:inline-block;width:4px;height:4px;border-radius:50%;background:currentColor;vertical-align:middle;margin:0 .6em;opacity:.7}
+/* a label and the dot after it never part: no dot alone at a line end or at the start of the next line */
+.nw{white-space:nowrap}
 .h2{font-weight:300;font-size:clamp(2.125rem,5.2vw,5.375rem);line-height:1;letter-spacing:-.03em}
 /* hand-set lines: each sentence part on its own line, wrapped normally (balancing split-word lines breaks them on Safari 18) */
 [data-split] .l,.how-sub .l{display:block;text-wrap:wrap}
 .h2-big{font-size:clamp(2.5rem,6.2vw,6.5rem);line-height:.98;max-width:14em}
 .h3{font-weight:500;font-size:clamp(1.25rem,1.7vw,1.75rem);line-height:1.15;letter-spacing:-.015em}
-.link{position:relative;display:inline-block;font-weight:400;padding-bottom:4px}
-.link::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:currentColor;transform-origin:left;transition:transform .6s var(--ease)}
+/* links: 44px to tap, the underline where it always was */
+.link{position:relative;display:inline-block;font-weight:400;padding-block:10px}
+.link::after{content:"";position:absolute;left:0;right:0;bottom:6px;height:1px;background:currentColor;transform-origin:left;transition:transform .6s var(--ease)}
 /* hover: the underline sweeps out and back in, so the link never loses its underline */
 @media (hover:hover){.link:hover::after{animation:link-swap .7s var(--ease)}}
 @keyframes link-swap{0%{transform:scaleX(1);transform-origin:right}49%{transform:scaleX(0);transform-origin:right}50%{transform:scaleX(0);transform-origin:left}100%{transform:scaleX(1);transform-origin:left}}
-/* min-height, not height: with a large browser text size the label wraps inside the pill instead of spilling out */
-.btn{display:inline-flex;align-items:center;justify-content:center;min-height:56px;padding:12px 28px;line-height:1.25;text-align:center;border-radius:999px;border:1px solid var(--line);background:var(--ink);color:var(--bg);font-weight:500;font-size:.9375rem;letter-spacing:.01em;cursor:pointer;transition:background .4s,color .4s,border-color .4s;will-change:transform}
+/* buttons: the label at body size (never smaller than the link beside it); min-height, so a large text size wraps inside the pill */
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:3.5rem;padding:12px 28px;line-height:1.25;text-align:center;border-radius:999px;border:1px solid var(--line);background:var(--ink);color:var(--bg);font-weight:500;font-size:inherit;letter-spacing:.01em;cursor:pointer;transition:background .4s,color .4s,border-color .4s;will-change:transform}
 @media (hover:hover){.btn:hover{background:var(--accent);border-color:var(--accent);color:#0B0B0C}}
-.btn-sm{min-height:44px;padding:8px 20px;font-size:.875rem;background:transparent;color:var(--ink);border-color:var(--line)}
+.btn-sm{min-height:2.75rem;padding:8px 20px;font-size:1rem;background:transparent;color:var(--ink);border-color:var(--line-strong)}
 @media (hover:hover){.btn-sm:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}}
 button.btn{font-family:inherit}
 /* a press shows, on touch too */
@@ -68,12 +81,14 @@ button.btn{font-family:inherit}
 .is-in .wi,html.no-motion .wi{will-change:auto}
 /* hidden for the reveal only once js/site.js runs (js-on): until then the text paints under the loader */
 html.js-on .reveal-line{opacity:0;transform:translateY(24px)}
+/* the form fades in where it is: a moving form is harder to start typing into */
+html.js-on .form.reveal-line{transform:none}
 html.no-js .reveal-line,html.no-js .wi,html.no-js .arrive-copy,
 html.js-failed .reveal-line,html.js-failed .wi,html.js-failed .arrive-copy{opacity:1;transform:none}
 html.no-js .loader,html.js-failed .loader{display:none}
 html.no-motion .reveal-line,html.no-motion .wi,html.no-motion .arrive-copy{opacity:1;transform:none}
 
-/* loader */
+/* loader: the wordmark alone */
 .loader{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;justify-content:flex-end;padding:var(--gutter);color:var(--ink)}
 .loader-name{opacity:0;transition:opacity .45s ease;display:flex;gap:.3em;font-size:clamp(1.75rem,4vw,3.5rem);font-weight:300;letter-spacing:-.03em;line-height:1}
 .loader-name span:last-child{font-family:var(--serif);font-style:italic;font-variation-settings:'opsz' 144}
@@ -81,40 +96,61 @@ html.no-motion .reveal-line,html.no-motion .wi,html.no-motion .arrive-copy{opaci
 /* no loader on a repeat view in the same tab, nor for Reduce Motion */
 html.seen .loader{display:none}
 
-/* nav */
-.nav{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding:20px var(--gutter) 40px;color:var(--ink);background:linear-gradient(to bottom,rgba(11,11,12,.88),rgba(11,11,12,.55) 45%,rgba(11,11,12,0));pointer-events:none}
+/* nav: on the page's own edges, links centred on the page */
+.nav{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 24px;padding:20px max(var(--gutter),calc((100% - var(--page)) / 2)) 40px;color:var(--ink);background:linear-gradient(to bottom,rgba(11,11,12,.88),rgba(11,11,12,.55) 45%,rgba(11,11,12,0));pointer-events:none}
+@media (min-width:721px){.nav{display:grid;grid-template-columns:1fr auto 1fr}.nav-name{justify-self:start}.nav>.btn{justify-self:end}}
 .nav > *{pointer-events:auto}
-/* solid backing once the bar sits over content, so its text never collides with the page text (site.js sets is-solid) */
-/* no backdrop blur: on phones it re-blurs the moving canvas every frame */
+/* solid backing once the bar sits over content, so its text never collides with the page text (site.js sets is-solid);
+   no backdrop blur: on phones it re-blurs the moving canvas every frame */
 .nav::before{content:"";position:absolute;inset:0 0 20px;z-index:-1;background:rgba(11,11,12,.94);border-bottom:1px solid var(--line);opacity:0;transition:opacity .35s}
 .nav.is-solid::before{opacity:1;pointer-events:auto}
 /* keyboard focus brings a retracted bar back; !important beats the inline transform GSAP sets */
 .nav:has(:focus-visible){transform:none!important}
+/* the bar's button steps aside while another "Request a consultation" is on screen (the hero's, or the form) */
+.nav>.btn{transition:opacity .4s,visibility .4s,background .4s,color .4s,border-color .4s}
+html.cta-in-view .nav>.btn{opacity:0;visibility:hidden}
 /* static fallback: no script to retract the bar, so it scrolls away with the page; same on very short screens
    (phones held sideways, 400% zoom), where a fixed bar would cover a third of the view */
 html.no-js .nav,html.js-failed .nav{position:absolute}
 @media (max-height:480px){.nav{position:absolute}}
-.nav-name{font-size:1rem;font-weight:500;letter-spacing:-.01em;white-space:nowrap}
-.nav-links{display:flex;gap:28px;font-size:.875rem;color:var(--ink)}
-.nav-links a{position:relative}
-.nav-links a::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .5s var(--ease)}
+/* the wordmark: the loader's lockup, a sans name with an italic Firch */
+.nav-name{font-size:min(1.375rem,5.6vw);font-weight:300;letter-spacing:-.02em;line-height:1;white-space:nowrap;padding:11px 6px;margin:-11px -6px}
+.nav-name em,.foot-name em{letter-spacing:-.01em}
+.nav-links{display:flex;gap:28px;font-size:1rem;color:var(--ink)}
+.nav-links a{position:relative;padding:11px 6px;margin:-11px -6px}
+.nav-links a::after{content:"";position:absolute;left:6px;right:6px;bottom:7px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:right;transition:transform .5s var(--ease)}
 @media (hover:hover){.nav-links a:hover::after{transform:scaleX(1);transform-origin:left}}
 @media (max-width:720px){.nav-links{display:none}}
+@media (max-width:22.5em){.nav{column-gap:10px}.btn-sm{padding-inline:12px;font-size:.9375rem}}
 
 /* hero */
-.hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:max(clamp(92px,13vh,150px),6.5rem);padding-bottom:clamp(40px,8vh,96px);position:relative}
-.hero-in{display:grid;grid-template-columns:minmax(0,1fr) clamp(230px,24vw,440px);gap:clamp(32px,4vw,72px);align-items:end}
+.hero{min-height:100vh;min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding-top:max(clamp(92px,13vh,150px),6.5rem);padding-bottom:clamp(40px,8vh,96px);position:relative}
+.hero-in{width:100%;display:grid;grid-template-columns:minmax(0,1fr) clamp(230px,24vw,27.5rem);gap:clamp(32px,4vw,4.5rem);align-items:end}
 .hero-copy{display:grid;gap:clamp(24px,3.4vh,40px);min-width:0}
 .hero-title{font-weight:300;font-size:clamp(2.125rem,6.4vw,6.5rem);line-height:.98;letter-spacing:-.035em}
-.hero-title em{font-variation-settings:'opsz' 144;font-size:1.06em;color:var(--ink)}
+.hero-title em{color:var(--ink)}
+.hero-title .l-m{display:inline}
 .hero-foot{display:grid;gap:26px;max-width:40em}
-.hero-sub{max-width:36em;color:var(--body);font-size:clamp(1.125rem,1.3vw,1.375rem)}
+.hero-sub{max-width:31em;color:var(--body);font-size:clamp(1.125rem,1.3vw,1.375rem)}
 .hero-cta{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
 .hero-fig{width:100%;aspect-ratio:4/5;align-self:end;margin-bottom:6px}
 @media (max-width:980px){
   .hero-in{grid-template-columns:1fr}
   .hero-fig{display:none}
 }
+/* tablets: a bigger headline, and the first section ends where its text ends, so a portrait iPad is not one small block in a tall empty screen */
+@media (min-width:601px) and (max-width:980px){.hero-title{font-size:clamp(3rem,7.6vw,4.25rem)}.hero-sub{max-width:30em}}
+@media (min-width:601px) and (max-width:980px) and (orientation:portrait){.hero{min-height:0;justify-content:flex-start;padding-top:max(clamp(104px,14svh,168px),6.5rem);padding-bottom:clamp(40px,6svh,80px)}}
+/* phones: a headline bigger than a section heading, and the big photo of Bart rising into the first screen */
+@media (max-width:600px){
+  .hero{min-height:0;justify-content:flex-start;padding-top:max(clamp(96px,14svh,140px),6.5rem);padding-bottom:clamp(36px,6svh,64px)}
+  .hero-title{font-size:clamp(2.25rem,min(12vw,6.4svh),3.25rem);line-height:.96}
+  .hero-title .l-m{display:block}
+  /* the dots become line breaks: the eyebrow, the photo caption and the sign-off stack instead of wrapping mid-list */
+  .hero .eyebrow .dot,.arrive-cap .dot,.signoff-text .dot{display:block;width:0;height:0;margin:0;opacity:0}
+}
+/* phones held sideways: the hero starts higher, so the button is in the first view */
+@media (max-height:500px) and (orientation:landscape){.hero{min-height:0;justify-content:flex-start;padding-top:84px;padding-bottom:32px}.hero-copy{gap:16px}.hero-foot{gap:18px}}
 
 /* photo figures: the shader draws the same shape when WebGL is on */
 .gl-fig{position:relative;overflow:hidden;background:#141416}
@@ -138,8 +174,8 @@ html.gl-native .gl-fig[data-shape="arch"]{border-radius:50% 50% 10px 10px / 40% 
 html.gl-native .gl-fig[data-shape="rect"]{border-radius:18px}
 html.gl-native .gl-fig[data-shape="round"]{border-radius:50%}
 
-/* arrive: one full-bleed frame, no pin, no zoom */
-.arrive{position:relative;height:min(100svh,calc(100vw * .62));min-height:min(62svh,520px,100vw);overflow:hidden}
+/* arrive: one full-bleed frame, no pin, no zoom (vh first, for browsers without svh) */
+.arrive{position:relative;height:min(100vh,calc(100vw * .62));height:min(100svh,calc(100vw * .62));min-height:min(62vh,520px,100vw);min-height:min(62svh,520px,100vw);overflow:hidden}
 /* phones: a taller frame puts the statement over his dark shirt instead of his face and the white bleachers */
 @media (max-width:600px){.arrive{height:auto;min-height:max(min(135vw,100svh),31rem)}}
 .arrive-fig{position:absolute;inset:0;width:100%;height:100%}
@@ -150,84 +186,94 @@ html.gl-native .gl-fig[data-shape="round"]{border-radius:50%}
 .arrive-lead{font-weight:300;font-size:clamp(1.625rem,3.8vw,4.25rem);line-height:1.04;letter-spacing:-.03em;max-width:16em}
 .arrive-cap{color:var(--ink)}
 
-/* disciplines strip */
-.strip{padding-block:clamp(32px,6vh,72px) 0}
-.marquee-wrap{position:relative}
-.marquee-toggle{position:absolute;right:var(--gutter);top:-34px;min-height:28px;padding:4px 12px;line-height:1.2;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--muted);font:inherit;font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
-@media (hover:hover){.marquee-toggle:hover{color:var(--ink);border-color:var(--ink)}}
+/* disciplines strip: the switch sits on the strip's own row, the words fade out before it */
+.strip{padding:0}
+.marquee-wrap{position:relative;border-block:1px solid var(--line)}
+.marquee-toggle{position:absolute;z-index:1;right:var(--gutter);top:50%;transform:translateY(-50%);min-height:2.75rem;padding:6px 16px;line-height:1.2;border:1px solid var(--line-strong);border-radius:999px;background:var(--bg);color:var(--ink);font:inherit;font-size:.9375rem;letter-spacing:.06em;cursor:pointer}
+@media (hover:hover){.marquee-toggle:hover{border-color:var(--ink)}}
 /* "Pause motion" stops all background motion: this strip here, the dust and grain in site.js */
 html.motion-paused .marquee-track{animation-play-state:paused}
-.marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:20px 0;overflow:hidden;white-space:nowrap}
+.marquee{padding:22px 0;overflow:hidden;white-space:nowrap;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 72%,transparent 86%);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 72%,transparent 86%)}
 .marquee-track{display:inline-flex;gap:0;animation:marquee 46s linear infinite;will-change:transform}
 @media (hover:hover){.marquee:hover .marquee-track{animation-play-state:paused}}
-.marquee-track span{font-family:var(--serif);font-style:italic;font-weight:300;font-variation-settings:'opsz' 144;font-size:clamp(1.5rem,3.2vw,2.875rem);line-height:1;padding-right:1.2em;color:var(--ink)}
+.marquee-track span{font-family:var(--serif);font-style:italic;font-weight:400;font-variation-settings:'opsz' 72;font-size:clamp(1.5rem,3.2vw,2.875rem);line-height:1;padding-right:1.2em;color:var(--ink)}
 .marquee-track span::after{content:"·";color:var(--accent);padding-left:1.2em}
 @keyframes marquee{to{transform:translateX(-50%)}}
-/* static fallback: the Pause button needs the script, so the strip stands still and the button goes */
+/* static fallback: the switch needs the script, so the strip stands still and the switch goes */
 html.no-js .marquee-track,html.js-failed .marquee-track{animation:none}
 html.no-js .marquee-toggle,html.js-failed .marquee-toggle{display:none}
+html.no-js .marquee,html.js-failed .marquee{-webkit-mask-image:linear-gradient(90deg,#000 92%,transparent);mask-image:linear-gradient(90deg,#000 92%,transparent)}
 
-/* about */
-.about{padding-block:clamp(64px,9vh,132px)}
-.about-grid{max-width:1360px;margin-inline:auto;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(40px,5vw,104px);align-items:center}
+/* about: text and arch side by side down to 601px */
+.about{padding-block:var(--section)}
+.about-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(32px,5vw,6.5rem);align-items:center}
 .about-text{display:grid;gap:28px;max-width:40em}
 .about-p{font-size:clamp(1.125rem,1.35vw,1.4375rem);color:var(--ink)}
 .about-pull{font-weight:300;font-size:clamp(1.625rem,3vw,3.375rem);line-height:1.1;letter-spacing:-.025em;margin-top:16px}
-.about-fig{aspect-ratio:3/4;width:min(100%,500px);justify-self:end}
-@media (max-width:840px){.about-grid{grid-template-columns:1fr}.about-fig{justify-self:start;width:min(100%,320px)}}
+/* small italics take the sturdier cut, so their hairlines hold up */
+.about-pull em{font-weight:400;font-variation-settings:'opsz' 72}
+.about-fig{aspect-ratio:3/4;width:min(100%,31.25rem);justify-self:end}
+@media (max-width:600px){.about-grid{grid-template-columns:1fr}.about-fig{justify-self:stretch;width:100%;aspect-ratio:4/5}}
 
-/* work */
-.work{padding-block:clamp(48px,7vh,104px)}
-.work-head{max-width:1560px;margin-inline:auto;display:grid;gap:22px;margin-bottom:clamp(32px,5vh,60px)}
-.work-grid{max-width:1560px;margin-inline:auto;display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,4vw,72px)}
-.offer{display:grid;grid-template-columns:clamp(150px,14vw,240px) minmax(0,1fr);gap:clamp(20px,2.2vw,36px);align-items:start}
-.offer-b{margin-top:clamp(28px,6vh,80px)}
-.offer-fig{aspect-ratio:3/4;width:100%}
-.offer-body{display:grid;gap:14px;max-width:36em}
-.offer-body p:not(.eyebrow){color:var(--body);font-size:clamp(1.0625rem,1.15vw,1.1875rem)}
-.offer-body .link{justify-self:start}
-@media (max-width:1280px){.work-grid{grid-template-columns:1fr;gap:clamp(32px,5vh,56px)}.offer-b{margin-top:0}.offer{grid-template-columns:clamp(160px,22vw,240px) minmax(0,1fr)}}
-@media (max-width:560px){.offer{grid-template-columns:1fr}.offer-fig{width:min(100%,240px);aspect-ratio:4/5}}
+/* work: each offer a full-width row, photo, title, then the words, divided by the steps' hairline */
+.work{padding-block:var(--section)}
+.work-head{display:grid;gap:22px;margin-bottom:clamp(32px,3.3vw,4rem)}
+.work-grid{display:grid;grid-template-columns:1fr}
+.offer{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--col-gap);row-gap:18px;align-items:start;border-top:1px solid var(--line);padding-block:clamp(28px,3.5vw,3.5rem)}
+.offer:last-child{border-bottom:1px solid var(--line)}
+.offer-fig{grid-column:1/4;aspect-ratio:4/5;width:100%}
+.offer-title{grid-column:4/8;display:grid;gap:14px;align-content:start}
+.offer-h{font-size:clamp(1.625rem,3vw,3.375rem);font-weight:300;line-height:1.08;letter-spacing:-.025em}
+.offer-copy{grid-column:8/13;display:grid;gap:14px;align-content:start}
+.offer-copy p{color:var(--body);font-size:clamp(1.125rem,1.15vw,1.25rem)}
+.offer-copy .link{justify-self:start}
+@media (max-width:980px){.offer{grid-template-columns:clamp(160px,30vw,260px) minmax(0,1fr);column-gap:clamp(20px,3vw,36px)}.offer-fig{grid-column:1;grid-row:1/3}.offer-title,.offer-copy{grid-column:2}}
+@media (max-width:560px){.offer{grid-template-columns:1fr}.offer-fig{grid-column:1;grid-row:auto}.offer-title,.offer-copy{grid-column:1}}
 
 /* how */
-.how{padding-block:clamp(48px,8vh,120px)}
-.how-grid{max-width:1460px;margin-inline:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(40px,5vw,100px);align-items:start}
-.how-head{display:grid;gap:22px;position:sticky;top:120px}
+.how{padding-block:var(--section)}
+.how-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(32px,5vw,6.25rem);align-items:start}
+.how-head{display:grid;gap:22px}
 .how-sub{color:var(--body);max-width:28em;font-size:clamp(1.125rem,1.3vw,1.3125rem)}
 .steps{display:grid}
-.step{display:grid;grid-template-columns:64px 1fr;gap:18px;padding:30px 0;border-top:1px solid var(--line)}
+.step{display:grid;grid-template-columns:4rem 1fr;gap:18px;align-items:baseline;padding:30px 0;border-top:1px solid var(--line)}
 .step:last-child{border-bottom:1px solid var(--line)}
-.step-n{font-family:var(--serif);font-style:italic;font-weight:300;font-variation-settings:'opsz' 144;font-size:1.375rem;color:var(--accent);padding-top:6px}
+/* one numeral style for the steps and the offers: the amber italic, in the sturdier cut so a 3 reads as a 3 */
+.step-n{font-family:var(--serif);font-style:italic;font-weight:400;font-variation-settings:'opsz' 36;font-size:clamp(1.25rem,1.7vw,1.75rem);line-height:1;color:var(--accent)}
 .step div{display:grid;gap:8px}
 .step p{color:var(--body);max-width:32em;font-size:clamp(1.0625rem,1.15vw,1.1875rem)}
-@media (max-width:840px){.how-grid{grid-template-columns:1fr}.how-head{position:static}}
+.how-more{margin-top:28px}
+@media (max-width:840px){.how-grid{grid-template-columns:1fr}}
+@media (max-width:600px){.step{grid-template-columns:2.75rem 1fr;gap:12px}}
 
-/* experience */
-.exp{padding-block:clamp(48px,7vh,104px)}
-.exp-grid{max-width:1360px;margin-inline:auto;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:clamp(40px,5vw,104px);align-items:center}
+/* experience: mirrored, photo first, so it does not repeat About's text-left, arch-right layout */
+.exp{padding-block:var(--section)}
+.exp-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:clamp(32px,5vw,6.5rem);align-items:center}
 .exp-line{font-weight:300;font-size:clamp(1.5rem,2.6vw,3.125rem);line-height:1.12;letter-spacing:-.02em;max-width:17em}
-.exp-fig{aspect-ratio:4/5;width:min(100%,400px);justify-self:end}
-@media (max-width:840px){.exp-grid{grid-template-columns:1fr}.exp-fig{justify-self:start;width:min(100%,260px)}}
+.exp-fig{order:-1;aspect-ratio:4/5;width:min(100%,25rem);justify-self:start}
+@media (max-width:600px){.exp-grid{grid-template-columns:1fr}.exp-fig{order:0;width:100%}.exp-line{line-height:1.2}}
 
-/* contact */
-.contact{position:relative;padding-block:clamp(64px,10vh,150px) clamp(72px,12vh,170px)}
-.contact-grid{max-width:1460px;margin-inline:auto;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(40px,5vw,100px);position:relative;z-index:2}
+/* contact: two columns down to 721px */
+.contact{position:relative;padding-block:var(--section) calc(var(--section) * 1.25)}
+.contact-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(32px,5vw,6.25rem);position:relative;z-index:2}
 .contact-head{display:grid;gap:24px;align-content:start}
 .signoff{display:flex;align-items:center;gap:18px;margin-top:8px}
-.portrait-fig{width:clamp(96px,9vw,132px);aspect-ratio:1/1;flex:none}
+.portrait-fig{width:clamp(96px,9vw,8.25rem);aspect-ratio:1/1;flex:none}
 .signoff-text{font-size:1rem;color:var(--body)}
 .contact-sub{color:var(--body);max-width:30em;font-size:clamp(1.125rem,1.3vw,1.3125rem)}
-.form{display:grid;gap:26px;align-content:start;justify-items:start;max-width:620px}
+.form{display:grid;gap:26px;align-content:start;justify-items:start;max-width:38.75rem}
 .form .field{width:100%}
-.form .btn{min-width:260px}
+.form > .btn{min-width:260px;margin-top:14px}
 .field{display:grid;gap:8px}
-.field label{font-size:.8125rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
-.field input,.field textarea{width:100%;background:transparent;border:0;border-bottom:1px solid rgba(237,232,223,.45);border-radius:0;color:var(--ink);font:inherit;font-size:1.125rem;padding:10px 0;transition:border-color .4s;resize:none}
-.field input:focus,.field textarea:focus{outline:none;border-bottom-width:2px;border-color:var(--accent)}
+.field label{font-size:.9375rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+/* fields read as boxes to type in: a faint fill, a faint border with a stronger bottom line */
+.field input,.field textarea{width:100%;background:rgba(237,232,223,.035);border:1px solid rgba(237,232,223,.22);border-bottom-color:rgba(237,232,223,.6);border-radius:10px;color:var(--ink);font:inherit;font-size:1.125rem;padding:12px 14px;transition:border-color .4s;resize:none}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
 .field:focus-within label{color:var(--ink)}
-.field [aria-invalid="true"],.field [aria-invalid="true"]:focus{border-bottom:2px solid var(--error)}
+/* a wrong field is edged in coral, also while focused, so an error never looks like focus */
+.field [aria-invalid="true"],.field [aria-invalid="true"]:focus{border-color:var(--error)}
 /* autofill keeps the dark field and light text (Chrome and Safari paint their own boxes otherwise) */
-.field input:-webkit-autofill,.field textarea:-webkit-autofill{-webkit-text-fill-color:var(--ink);caret-color:var(--ink);box-shadow:0 0 0 1000px var(--bg) inset}
+.field input:-webkit-autofill,.field textarea:-webkit-autofill{-webkit-text-fill-color:var(--ink);caret-color:var(--ink);box-shadow:0 0 0 1000px #141414 inset}
 .field-error{font-size:1.125rem;line-height:1.4;color:var(--error)}
 .hp{display:none}
 /* dim the children: the reveal leaves an inline opacity on the form itself */
@@ -239,24 +285,57 @@ html.no-js .marquee-toggle,html.js-failed .marquee-toggle{display:none}
 /* sent: the fields step aside and the thank-you takes their place */
 .form.is-sent .field,.form.is-sent > .btn{display:none}
 .form.is-sent .form-note{font-size:clamp(1.5rem,2.4vw,2.5rem);line-height:1.2;color:var(--ink)}
-.form-again{background:none;border:0;color:var(--ink);font:inherit;cursor:pointer;padding:0 0 4px}
-@media (max-width:840px){.contact-grid{grid-template-columns:1fr}}
+.form-again{background:none;border:0;color:var(--ink);font:inherit;cursor:pointer}
+@media (max-width:720px){.contact-grid{grid-template-columns:1fr}}
+@media (max-width:560px){.form > .btn{width:100%;min-width:0}}
 
-/* footer */
-.foot{border-top:1px solid var(--line);padding-block:28px 40px;font-size:.875rem;color:var(--muted)}
-.foot-in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+/* footer: its own landmark, outside main */
+.foot{position:relative;z-index:1;border-top:1px solid var(--line);padding-block:28px 40px;font-size:1rem;color:var(--muted)}
+.foot-in{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.foot-name{font-size:1.125rem;font-weight:300;color:var(--ink)}
 
 /* balanced wrapping only where text-wrap:pretty also exists (Chrome, Edge, Safari 26): Safari 17.5 to 18 balance
    word-split headings wrongly (the hero broke into six lines on iOS 18), so they wrap normally there */
 @supports (text-wrap:pretty){.h2,.hero-title,.arrive-lead,.about-p,[data-split] .l{text-wrap:balance}}
+/* the headline italics on phones take the sturdier cut too */
+@media (max-width:600px){.hero-title em,.h2 em{font-weight:400;font-variation-settings:'opsz' 72}}
 
 @media (prefers-reduced-motion:reduce){
   /* no loader, and the disciplines as one still, centred line that wraps (all nine, no repeat) */
   .loader{display:none}
   .marquee-toggle{display:none}
-  .marquee{white-space:normal;padding:22px var(--gutter)}
+  .marquee{white-space:normal;padding:22px var(--gutter);-webkit-mask-image:none;mask-image:none}
   .marquee-track{animation:none;display:flex;flex-wrap:wrap;justify-content:center;row-gap:12px}
   .marquee-track span:nth-child(n+10){display:none}
   .marquee-track span:nth-child(9)::after{content:none}
-  .btn,.link::after,.nav::before{transition:none}
+  .btn,.link::after,.nav::before,.nav>.btn{transition:none}
+}
+
+/* more contrast asked for: stronger lines and no grey text */
+@media (prefers-contrast:more){:root{--line:rgba(237,232,223,.5);--muted:var(--ink)}}
+
+/* Windows high-contrast themes: no starfield, every word shown, the dots drawn in the theme's text colour */
+@media (forced-colors:active){
+  .gl,.loader,.arrive-copy::before{display:none!important}
+  .wi,.reveal-line,.arrive-copy{opacity:1!important;transform:none!important}
+  .w{overflow:visible}
+  .dot{forced-color-adjust:none;background:CanvasText}
+  .gl-fig img{opacity:1!important}
+}
+
+/* print: black ink on white, every word and photo shown, no background effects or form */
+@media print{
+  html,body{background:#fff!important;color:#000!important}
+  .gl,.loader,.nav,.skip,.strip,.form,.arrive-copy::before{display:none!important}
+  .wi,.reveal-line,.arrive-copy{opacity:1!important;transform:none!important}
+  .w{overflow:visible}
+  .gl-fig img{opacity:1!important}
+  .hero{min-height:0;padding:0 0 24px}
+  .arrive{height:auto;min-height:0}
+  .arrive-fig{position:static;height:60vh}
+  .arrive-copy{position:static;padding-top:16px}
+  .eyebrow,.hero-sub,.about-p,.offer-copy p,.step p,.contact-sub,.signoff-text,.foot,.how-sub,.arrive-cap{color:#000!important}
+  .about,.work,.how,.exp,.contact{padding-block:24px}
+  .offer,.step,.about-grid,.exp-grid{break-inside:avoid}
+  .step-n{color:#000}
 }

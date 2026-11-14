@@ -2,7 +2,7 @@
 <html lang="en" class="no-js">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- dark: keeps Android's auto-darkening off the page and gives dark scrollbars and form autofill -->
 <meta name="color-scheme" content="dark">
 <script>
@@ -93,7 +93,7 @@ setTimeout(jsFailed, 4000); // a boot that has not finished by 4 s leaves the st
 <canvas class="gl" id="gl" aria-hidden="true"></canvas>
 
 <header class="nav" id="nav">
-  <a class="nav-name" href="#top">Bart Firch</a>
+  <a class="nav-name" href="#top">Bart <em>Firch</em></a>
   <nav class="nav-links" aria-label="Sections">
     <a href="#about">About</a>
     <a href="#work">Work with me</a>
@@ -107,9 +107,9 @@ setTimeout(jsFailed, 4000); // a boot that has not finished by 4 s leaves the st
   <section class="hero" id="hero">
     <div class="wrap hero-in">
       <div class="hero-copy">
-        <p class="eyebrow reveal-line">Health coaching <span class="dot"></span> Private yoga <span class="dot"></span> San&nbsp;Jose, California</p>
+        <p class="eyebrow reveal-line"><span class="nw">Health coaching <span class="dot"></span></span> <span class="nw">Private yoga <span class="dot"></span></span> San&nbsp;Jose, California</p>
         <h1 class="hero-title" data-split>
-          <span class="l">A body that can keep</span>
+          <span class="l">A body that <span class="l-m">can keep</span></span>
           <span class="l"><em>showing up</em></span>
           <span class="l">for your life.</span>
         </h1>
@@ -135,7 +135,7 @@ setTimeout(jsFailed, 4000); // a boot that has not finished by 4 s leaves the st
     </figure>
     <div class="arrive-copy wrap">
       <p class="arrive-lead" data-split>Nearly twenty years of helping people move better, get stronger, and stay in one piece.</p>
-      <p class="arrive-cap eyebrow">Bart Firch <span class="dot"></span> San&nbsp;Jose, California</p>
+      <p class="arrive-cap eyebrow"><span class="nw">Bart Firch <span class="dot"></span></span> San&nbsp;Jose, California</p>
     </div>
   </section>
 
@@ -177,21 +177,25 @@ setTimeout(jsFailed, 4000); // a boot that has not finished by 4 s leaves the st
           <figure class="gl-fig offer-fig" data-gl data-shape="rect" data-focus="0.45 0.5">
             <picture><source type="image/webp" srcset="img/bart-river.webp"><img style="object-position:45% 50%" src="img/bart-river.jpg" alt="Bart leaping between rocks across a mountain river" width="800" height="713" loading="lazy" decoding="async"></picture>
           </figure>
-          <div class="offer-body">
-            <p class="eyebrow reveal-line">01</p>
-            <h3 class="h3 reveal-line">Full-Spectrum Health Coaching</h3>
+          <div class="offer-title">
+            <p class="step-n reveal-line">01</p>
+            <h3 class="offer-h reveal-line">Full-Spectrum Health Coaching</h3>
+          </div>
+          <div class="offer-copy">
             <p class="reveal-line">You want to lose the weight, or keep the mobility you still have, or have something left in the tank at the end of the day. We find out which, and we build the body that gets you there.</p>
             <p class="reveal-line">Strength, weight loss, nutrition, running, mobility, recovery, injury prevention, the equipment, and the habits around all of it. One plan, in the order it matters.</p>
             <a class="link reveal-line" href="#contact">Request a consultation</a>
           </div>
         </article>
-        <article class="offer offer-b">
-          <figure class="gl-fig offer-fig" data-gl data-shape="rect" data-focus="0.87 0.5">
-            <picture><source type="image/webp" srcset="img/bart-dancer.webp"><img style="object-position:87% 50%" src="img/bart-dancer.jpg" alt="Bart in dancer’s pose, balanced on a concrete rail" width="900" height="931" loading="lazy" decoding="async"></picture>
+        <article class="offer">
+          <figure class="gl-fig offer-fig" data-gl data-shape="rect" data-focus="0.97 0.5">
+            <picture><source type="image/webp" srcset="img/bart-dancer.webp"><img style="object-position:97% 50%" src="img/bart-dancer.jpg" alt="Bart in dancer’s pose, balanced on a concrete rail" width="900" height="931" loading="lazy" decoding="async"></picture>
           </figure>
-          <div class="offer-body">
-            <p class="eyebrow reveal-line">02</p>
-            <h3 class="h3 reveal-line">Private Yoga &amp; Yoga Education</h3>
+          <div class="offer-title">
+            <p class="step-n reveal-line">02</p>
+            <h3 class="offer-h reveal-line">Private Yoga &amp; Yoga Education</h3>
+          </div>
+          <div class="offer-copy">
             <p class="reveal-line">A practice that fits the body you actually have, taught one to one or in a small group, so it holds up for the next thirty years.</p>
             <p class="reveal-line">And for teachers: anatomy, kinesiology and movement, applied to real practice. Grounded in how bodies work, not in how poses look.</p>
             <a class="link reveal-line" href="#contact">Request a consultation</a>
@@ -208,11 +212,14 @@ setTimeout(jsFailed, 4000); // a boot that has not finished by 4 s leaves the st
         <h2 class="h2" data-split><span class="l">It starts with</span> <span class="l"><em>a conversation.</em></span></h2>
         <p class="how-sub reveal-line">No booking calendars. No packages to pick from. <span class="l">We talk first.</span></p>
       </div>
+      <div class="how-body">
       <ol class="steps">
         <li class="step reveal-line"><span class="step-n">01</span><div><h3 class="h3">We talk</h3><p>A consultation. You tell me what’s going on and what you want. I listen and ask questions.</p></div></li>
         <li class="step reveal-line"><span class="step-n">02</span><div><h3 class="h3">I tell you what I think</h3><p>Honestly. What you need, what you don’t, and whether I’m the right person to help.</p></div></li>
         <li class="step reveal-line"><span class="step-n">03</span><div><h3 class="h3">We get to work</h3><p>Coaching, yoga, or both. Built around your life and adjusted as you go.</p></div></li>
       </ol>
+      <a class="btn how-more reveal-line" href="#contact">Request a consultation</a>
+      </div>
     </div>
   </section>
 
@@ -258,14 +265,15 @@ setTimeout(jsFailed, 4000); // a boot that has not finished by 4 s leaves the st
     </div>
   </section>
 
-  <footer class="foot">
-    <div class="wrap foot-in">
-      <span>Bart Firch</span>
-      <span>San&nbsp;Jose, California <span class="dot"></span> © 2026</span>
-    </div>
-  </footer>
 
 </main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <span class="foot-name">Bart <em>Firch</em></span>
+    <span>San&nbsp;Jose, California <span class="dot"></span> © 2026</span>
+  </div>
+</footer>
 
 <script type="module" src="js/site.js" onerror="jsFailed()"></script>
 </body>

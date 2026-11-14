@@ -51,7 +51,12 @@ function splitWords(root) {
       }
     });
   };
+  /* screen readers get the sentence once, as a hidden copy, instead of 76 separate word stops */
+  const text = root.textContent.replace(/\s+/g, ' ').trim();
   walk(root);
+  root.querySelectorAll('.w').forEach((w) => w.setAttribute('aria-hidden', 'true'));
+  const sr = document.createElement('span'); sr.className = 'sr-only'; sr.textContent = text;
+  root.prepend(sr);
   return root.querySelectorAll('.wi');
 }
 document.querySelectorAll('[data-split]').forEach((el) => splitWords(el));
@@ -76,6 +81,18 @@ const focusTarget = (target) => {
   if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
   target.focus({ preventScroll: true });
 };
+/* in-page links go into the history, so Back returns to where the visitor was instead of leaving the site */
+const jumpTo = (target) => {
+  if (lenis) lenis.scrollTo(target, { offset: -(parseFloat(getComputedStyle(target).scrollMarginTop) || 0), immediate: true, force: true });
+  else target.scrollIntoView();
+};
+window.addEventListener('popstate', (e) => {
+  const y = e.state && typeof e.state.y === 'number' ? e.state.y : null;
+  const target = location.hash.length > 1 && document.querySelector(location.hash);
+  if (y !== null) { if (lenis) lenis.scrollTo(y, { immediate: true, force: true }); else window.scrollTo(0, y); }
+  else if (target) jumpTo(target);
+  else if (lenis) lenis.scrollTo(0, { immediate: true, force: true }); else window.scrollTo(0, 0);
+});
 document.querySelectorAll('a[href^="#"]').forEach((a) => {
   a.addEventListener('click', (e) => {
     const id = a.getAttribute('href');
@@ -83,6 +100,10 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => {
     const target = document.querySelector(id);
     if (!target) return;
     e.preventDefault();
+    try {
+      history.replaceState({ y: window.scrollY }, '', location.href); // where they were, for Back
+      if (location.hash !== id) history.pushState({}, '', id);
+    } catch (err) { /* history is optional */ }
     /* Lenis ignores scroll-margin-top (css: it keeps section labels clear of the nav bar), so pass it as the offset */
     const offset = -(parseFloat(getComputedStyle(target).scrollMarginTop) || 0);
     const far = Math.abs(target.getBoundingClientRect().top) > innerHeight * 1.5;
@@ -398,8 +419,11 @@ let hidden = false;
 document.addEventListener('visibilitychange', () => { hidden = document.hidden; });
 
 const QUIET = '.hero-copy, .contact-head, .form';
+let skipFrame = false;
 function render() {
   if (!renderer || hidden) return;
+  /* phones at rest draw every other frame: the slow dust looks the same at 30 fps and the battery lasts */
+  if (touch && Math.abs(GL.vel) < 0.05 && (skipFrame = !skipFrame)) return;
   onResize(); // no-op when the size is unchanged; fixes a renderer sized before the stylesheet applied (Safari runs deferred scripts without waiting for it)
   const dt = clock.getDelta();
   if (!GL.paused) GL.time += dt; // "Pause motion" stops the clock: dust, breath, glow and grain all hold still
@@ -505,7 +529,8 @@ function setupScroll() {
   const arriveWords = arrive.querySelectorAll('.wi');
   const arriveCopy = arrive.querySelector('.arrive-copy');
   if (!late) gsap.set(arriveCopy, { opacity: 0, y: 24 });
-  ScrollTrigger.create({ trigger: arrive, start: 'top 62%', once: true, onEnter: () => {
+  /* triggered by the words themselves as they come into view, so the animation is seen, not finished off-screen */
+  ScrollTrigger.create({ trigger: arriveCopy, start: 'top 86%', once: true, onEnter: () => {
     gsap.to(arriveCopy, { opacity: 1, y: 0, duration: 1.1, ease: 'expo.out' });
     gsap.to(arriveWords, { y: 0, duration: 1.3, ease: 'expo.out', stagger: 0.03, overwrite: true, onComplete: () => arrive.querySelector('.arrive-lead').classList.add('is-in') });
   } });
@@ -520,25 +545,33 @@ function setupScroll() {
   const heroFigure = document.querySelector('.hero-fig');
   if (GL.planes.length) {
     GL.planes.forEach((p) => {
-      if (p.fig === heroFigure) { gsap.delayedCall(0.55, p.want); return; }
-      ScrollTrigger.create({ trigger: p.fig, start: 'top 92%', once: true, onEnter: p.want });
+      if (p.fig === heroFigure) { gsap.delayedCall(0.2, p.want); return; }
+      ScrollTrigger.create({ trigger: p.fig, start: 'top 78%', once: true, onEnter: p.want });
     });
   } else if (!reduced && !late) {
     document.querySelectorAll('.gl-fig img').forEach((img) => {
       gsap.set(img, { clipPath: 'inset(100% 0 0 0)', scale: 1.14 });
       const reveal = () => gsap.to(img, { clipPath: 'inset(0% 0 0 0)', scale: 1, duration: 1.7, ease: 'expo.out', overwrite: true });
-      if (img.closest('.hero')) gsap.delayedCall(0.55, reveal);
-      else ScrollTrigger.create({ trigger: img, start: 'top 92%', once: true, onEnter: reveal });
+      if (img.closest('.hero')) gsap.delayedCall(0.2, reveal);
+      /* the page photo starts as soon as it enters: its frame is already drawn, so a later start shows an empty shape */
+      else ScrollTrigger.create({ trigger: img, start: 'top 98%', once: true, onEnter: reveal });
     });
   }
 
-  /* depth: the figures drift against the page, which the GL planes pick up from the rect */
-  if (!reduced) {
-    document.querySelectorAll('.about-fig, .exp-fig').forEach((fig, i) => {
-      gsap.fromTo(fig, { y: 26 + i * 4 }, { y: -26 - i * 4, ease: 'none',
-        scrollTrigger: { trigger: fig, start: 'top bottom', end: 'bottom top', scrub: 0.6 } });
-    });
-  }
+  /* the bar's button steps aside while the hero's button or the form is on screen: one action in view at a time */
+  const ctaSeen = new Set();
+  const ctaIO = new IntersectionObserver((entries) => {
+    entries.forEach((en) => { if (en.isIntersecting) ctaSeen.add(en.target); else ctaSeen.delete(en.target); });
+    html.classList.toggle('cta-in-view', ctaSeen.size > 0);
+  });
+  document.querySelectorAll('.hero-cta, #form').forEach((el) => ctaIO.observe(el));
+
+  /* Tab can land in a block that has not faded in yet (Safari scrolls a focused field only to the screen edge):
+     focus reveals it at once, so the focused control is never invisible */
+  document.addEventListener('focusin', (e) => {
+    const host = e.target.closest && e.target.closest('.reveal-line');
+    if (host && +getComputedStyle(host).opacity < 1) gsap.to(host, { opacity: 1, y: 0, duration: 0.3, overwrite: true });
+  });
 
   /* nav: a solid backing once it sits over content (a plain scroll listener, so it also works with
      reduced motion, where the triggers below are removed and the bar never retracts) */
@@ -552,12 +585,14 @@ function setupScroll() {
      to the page, so the iPhone's bounce at either end does not count as scrolling up. */
   let navShown = true, navMark = 0;
   const setNav = (v) => { if (v === navShown) return; navShown = v; gsap.to(nav, { yPercent: v ? 0 : -140, duration: 0.35, ease: 'power2.out', overwrite: true }); };
+  /* phones: the slim bar (name and button) stays, so the one action is always a tap away */
+  const keepNav = window.matchMedia('(max-width:720px)');
   ScrollTrigger.create({
     start: 0, end: 'max',
     onUpdate: (st) => {
       const y = Math.min(Math.max(window.scrollY, 0), ScrollTrigger.maxScroll(window));
       const a = document.activeElement;
-      if (y < 80 || nav.contains(a)) { setNav(true); navMark = y; return; }
+      if (keepNav.matches || y < 80 || nav.contains(a)) { setNav(true); navMark = y; return; }
       if (a && a.closest && a.closest('.field')) { navMark = y; return; }
       if (st.direction === 1) { if (y - navMark > 24) setNav(false); if (!navShown) navMark = y; }
       else { if (navMark - y > 160) setNav(true); if (navShown) navMark = y; }
